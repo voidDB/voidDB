@@ -5,21 +5,39 @@
 
 int void_write_zero_file(size_t nBytes, char *fileName)
 {
+	int e;
+
 	FILE *file = fopen(fileName, "w");
 	if (file == NULL) {
-		return 8;
+		e = 8;
+
+		goto epilogue;
 	}
 
 	void *array = calloc(nBytes, 1);
 
 	size_t written = fwrite(array, 1, nBytes, file);
 	if (written != nBytes) {
-		return 9;
+		e = 9;
+
+		goto epilogue;
 	}
 
-	if (fclose(file) != 0) {
-		return 10;
+	e = fclose(file);
+	if (e != 0) {
+		e = 10;
+
+		goto epilogue;
 	}
 
-	return 0;
+	file = NULL;
+
+epilogue:
+	if (file != NULL) {
+		fclose(file);
+	}
+
+	free(array);
+
+	return e;
 }

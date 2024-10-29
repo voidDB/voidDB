@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"unsafe"
 
 	"github.com/cucumber/godog"
 
 	_ "github.com/voidDB/voidDB/libvoid"
 )
 
+// #include <stdlib.h>
 // #include "../../libvoid/include/void.h"
 import "C"
 
@@ -33,12 +35,18 @@ func writeZeroFile(ctx0 context.Context, n int, fileName string) (
 			fileName,
 		)
 
+		filePathC *C.char = C.CString(filePath)
+
 		status C.int
+	)
+
+	defer C.free(
+		unsafe.Pointer(filePathC),
 	)
 
 	status = C.void_write_zero_file(
 		C.size_t(n),
-		C.CString(filePath),
+		filePathC,
 	)
 
 	if status != 0 {
