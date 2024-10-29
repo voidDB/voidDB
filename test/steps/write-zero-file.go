@@ -7,10 +7,10 @@ import (
 
 	"github.com/cucumber/godog"
 
-	_ "github.com/voidDB/voidDB/lib"
+	_ "github.com/voidDB/voidDB/libvoid"
 )
 
-// #include "../../lib/include/void.h"
+// #include "../../libvoid/include/void.h"
 import "C"
 
 func AddStepWriteZeroFile(sc *godog.ScenarioContext) {
@@ -36,7 +36,7 @@ func writeZeroFile(ctx0 context.Context, n int, fileName string) (
 		status C.int
 	)
 
-	status = C.write_zero_file(
+	status = C.void_write_zero_file(
 		C.size_t(n),
 		C.CString(filePath),
 	)

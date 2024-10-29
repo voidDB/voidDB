@@ -1,0 +1,3 @@
+package libvoid
+
+import "C"

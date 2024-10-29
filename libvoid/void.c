@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int write_zero_file(size_t nBytes, char *fileName)
+int void_write_zero_file(size_t nBytes, char *fileName)
 {
 	FILE *file = fopen(fileName, "w");
 	if (file == NULL) {
