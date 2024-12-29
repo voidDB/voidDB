@@ -10,7 +10,7 @@ import (
 )
 
 func AddStepGetNotFound(sc *godog.ScenarioContext) {
-	sc.Then(`^Get-ting "([^"]*)" from "([^"]*)" should not find$`, getNotFound)
+	sc.Then(`^getting "([^"]*)" from "([^"]*)" should not find$`, getNotFound)
 
 	return
 }
@@ -21,7 +21,7 @@ func getNotFound(ctx0 context.Context, key, name string) (
 	ctx = ctx0
 
 	var (
-		r root = ctx.Value(ctxKeyRoot{name}).(root)
+		r root = ctx.Value(ctxKeyTree{name}).(root)
 	)
 
 	_, e = tree.Get(&r.medium, r.offset,

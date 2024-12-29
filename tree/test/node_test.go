@@ -11,7 +11,7 @@ import (
 func TestNode(t *testing.T) {
 	var (
 		scenarioInitializer = func(sc *godog.ScenarioContext) {
-			steps.AddStepNewRootNode(sc)
+			steps.AddStepNewTree(sc)
 			steps.AddStepPut(sc)
 			steps.AddStepGet(sc)
 			steps.AddStepGetNotFound(sc)

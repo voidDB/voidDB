@@ -10,7 +10,7 @@ import (
 )
 
 func AddStepGet(sc *godog.ScenarioContext) {
-	sc.Then(`^I should Get "([^"]*)", "([^"]*)" from "([^"]*)"$`, get)
+	sc.Then(`^I should get "([^"]*)", "([^"]*)" from "([^"]*)"$`, get)
 
 	return
 }
@@ -21,7 +21,7 @@ func get(ctx0 context.Context, key, valueExpect, name string) (
 	ctx = ctx0
 
 	var (
-		r root = ctx.Value(ctxKeyRoot{name}).(root)
+		r root = ctx.Value(ctxKeyTree{name}).(root)
 
 		valueActual []byte
 	)

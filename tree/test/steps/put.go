@@ -9,18 +9,18 @@ import (
 )
 
 func AddStepPut(sc *godog.ScenarioContext) {
-	sc.When(`^I Put "([^"]*)", "([^"]*)" into "([^"]*)"$`, _put)
+	sc.When(`^I put "([^"]*)", "([^"]*)" into "([^"]*)"$`, put)
 
 	return
 }
 
-func _put(ctx0 context.Context, key, value, name string) (
+func put(ctx0 context.Context, key, value, name string) (
 	ctx context.Context, e error,
 ) {
 	ctx = ctx0
 
 	var (
-		r root = ctx.Value(ctxKeyRoot{name}).(root)
+		r root = ctx.Value(ctxKeyTree{name}).(root)
 	)
 
 	r.offset, e = tree.Put(&r.medium, r.offset,
@@ -31,7 +31,7 @@ func _put(ctx0 context.Context, key, value, name string) (
 		return
 	}
 
-	ctx = context.WithValue(ctx, ctxKeyRoot{name}, r)
+	ctx = context.WithValue(ctx, ctxKeyTree{name}, r)
 
 	return
 }

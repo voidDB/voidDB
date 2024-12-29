@@ -8,13 +8,13 @@ import (
 	"github.com/voidDB/voidDB/tree"
 )
 
-func AddStepNewRootNode(sc *godog.ScenarioContext) {
-	sc.Given(`^there is a new root Node "([^"]*)"$`, newRootNode)
+func AddStepNewTree(sc *godog.ScenarioContext) {
+	sc.Given(`^there is a new tree "([^"]*)"$`, newTree)
 
 	return
 }
 
-func newRootNode(ctx0 context.Context, name string) (
+func newTree(ctx0 context.Context, name string) (
 	ctx context.Context, e error,
 ) {
 	ctx = ctx0
@@ -31,14 +31,14 @@ func newRootNode(ctx0 context.Context, name string) (
 		return
 	}
 
-	ctx = context.WithValue(ctx, ctxKeyRoot{name},
+	ctx = context.WithValue(ctx, ctxKeyTree{name},
 		root{medium, offset},
 	)
 
 	return
 }
 
-type ctxKeyRoot struct {
+type ctxKeyTree struct {
 	Name string
 }
 

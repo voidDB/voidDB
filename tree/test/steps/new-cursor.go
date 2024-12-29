@@ -9,7 +9,9 @@ import (
 )
 
 func AddStepNewCursor(sc *godog.ScenarioContext) {
-	sc.When(`^I open a new cursor "([^"]*)" at "([^"]*)"$`, newCursor)
+	sc.When(`^I open a new cursor "([^"]*)" at the root of "([^"]*)"$`,
+		newCursor,
+	)
 
 	return
 }
@@ -20,7 +22,7 @@ func newCursor(ctx0 context.Context, name, rootName string) (
 	ctx = ctx0
 
 	var (
-		r root = ctx.Value(ctxKeyRoot{rootName}).(root)
+		r root = ctx.Value(ctxKeyTree{rootName}).(root)
 	)
 
 	ctx = context.WithValue(ctx, ctxKeyCursor{name},
