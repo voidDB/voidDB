@@ -16,6 +16,9 @@ func TestNode(t *testing.T) {
 			steps.AddStepGet(sc)
 			steps.AddStepGetNotFound(sc)
 			steps.AddStepDel(sc)
+			steps.AddStepNewCursor(sc)
+			steps.AddStepGetNext(sc)
+			steps.AddStepGetNextNotFound(sc)
 		}
 
 		options = &godog.Options{

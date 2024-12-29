@@ -3,10 +3,15 @@ Feature: Node
     Given there is a new root Node "root"
     When I Put "key", "value" into "root"
     Then I should Get "key", "value" from "root"
+    When I open a new cursor "cursor" at "root"
+    Then I should get "key", "value" next from "cursor"
+    Then getting next from "cursor" should not find
 
   Scenario: Get key-value record not yet Put
     Given there is a new root Node "root"
     Then Get-ting "key" from "root" should not find
+    When I open a new cursor "cursor" at "root"
+    Then getting next from "cursor" should not find
 
   Scenario: Put key-value records into root Node, causing overflow (2 levels)
     Given there is a new root Node "root"
@@ -24,6 +29,15 @@ Feature: Node
     Then I should Get "key4", "value4" from "root"
     Then I should Get "key5", "value5" from "root"
     Then I should Get "key6", "value6" from "root"
+    When I open a new cursor "cursor" at "root"
+    Then I should get "key0", "value0" next from "cursor"
+    Then I should get "key1", "value1" next from "cursor"
+    Then I should get "key2", "value2" next from "cursor"
+    Then I should get "key3", "value3" next from "cursor"
+    Then I should get "key4", "value4" next from "cursor"
+    Then I should get "key5", "value5" next from "cursor"
+    Then I should get "key6", "value6" next from "cursor"
+    Then getting next from "cursor" should not find
 
   Scenario: Put key-value records into root Node, causing overflow (3 levels)
     Given there is a new root Node "root"
@@ -77,6 +91,33 @@ Feature: Node
     Then I should Get "key22", "value22" from "root"
     Then I should Get "key23", "value23" from "root"
     Then I should Get "key24", "value24" from "root"
+    When I open a new cursor "cursor" at "root"
+    Then I should get "key00", "value00" next from "cursor"
+    Then I should get "key01", "value01" next from "cursor"
+    Then I should get "key02", "value02" next from "cursor"
+    Then I should get "key03", "value03" next from "cursor"
+    Then I should get "key04", "value04" next from "cursor"
+    Then I should get "key05", "value05" next from "cursor"
+    Then I should get "key06", "value06" next from "cursor"
+    Then I should get "key07", "value07" next from "cursor"
+    Then I should get "key08", "value08" next from "cursor"
+    Then I should get "key09", "value09" next from "cursor"
+    Then I should get "key10", "value10" next from "cursor"
+    Then I should get "key11", "value11" next from "cursor"
+    Then I should get "key12", "value12" next from "cursor"
+    Then I should get "key13", "value13" next from "cursor"
+    Then I should get "key14", "value14" next from "cursor"
+    Then I should get "key15", "value15" next from "cursor"
+    Then I should get "key16", "value16" next from "cursor"
+    Then I should get "key17", "value17" next from "cursor"
+    Then I should get "key18", "value18" next from "cursor"
+    Then I should get "key19", "value19" next from "cursor"
+    Then I should get "key20", "value20" next from "cursor"
+    Then I should get "key21", "value21" next from "cursor"
+    Then I should get "key22", "value22" next from "cursor"
+    Then I should get "key23", "value23" next from "cursor"
+    Then I should get "key24", "value24" next from "cursor"
+    Then getting next from "cursor" should not find
 
   Scenario: Del key-value record from root Node, and then Get
     Given there is a new root Node "root"
@@ -101,6 +142,14 @@ Feature: Node
     Then I should Get "key4", "value4" from "root"
     Then I should Get "key5", "value5" from "root"
     Then I should Get "key6", "value6" from "root"
+    When I open a new cursor "cursor" at "root"
+    Then I should get "key1", "value1" next from "cursor"
+    Then I should get "key2", "value2" next from "cursor"
+    Then I should get "key3", "value3" next from "cursor"
+    Then I should get "key4", "value4" next from "cursor"
+    Then I should get "key5", "value5" next from "cursor"
+    Then I should get "key6", "value6" next from "cursor"
+    Then getting next from "cursor" should not find
 
   Scenario: Del key-value record from root Node, causing underflow (take left)
     Given there is a new root Node "root"
@@ -116,12 +165,20 @@ Feature: Node
     When I Del "key50" from "root"
     Then I should Get "key00", "value00" from "root"
     Then I should Get "key10", "value10" from "root"
-    Then I should Get "key20", "value20" from "root"
     Then I should Get "key15", "value15" from "root"
+    Then I should Get "key20", "value20" from "root"
     Then I should Get "key30", "value30" from "root"
     Then I should Get "key40", "value40" from "root"
     Then Get-ting "key50" from "root" should not find
     Then Get-ting "key60" from "root" should not find
+    When I open a new cursor "cursor" at "root"
+    Then I should get "key00", "value00" next from "cursor"
+    Then I should get "key10", "value10" next from "cursor"
+    Then I should get "key15", "value15" next from "cursor"
+    Then I should get "key20", "value20" next from "cursor"
+    Then I should get "key30", "value30" next from "cursor"
+    Then I should get "key40", "value40" next from "cursor"
+    Then getting next from "cursor" should not find
 
   Scenario: Del key-value record from root Node, causing underflow (merge right)
     Given there is a new root Node "root"
@@ -141,6 +198,13 @@ Feature: Node
     Then I should Get "key4", "value4" from "root"
     Then I should Get "key5", "value5" from "root"
     Then Get-ting "key6" from "root" should not find
+    When I open a new cursor "cursor" at "root"
+    Then I should get "key1", "value1" next from "cursor"
+    Then I should get "key2", "value2" next from "cursor"
+    Then I should get "key3", "value3" next from "cursor"
+    Then I should get "key4", "value4" next from "cursor"
+    Then I should get "key5", "value5" next from "cursor"
+    Then getting next from "cursor" should not find
 
   Scenario: Del key-value record from root Node, causing underflow (merge left)
     Given there is a new root Node "root"
@@ -166,3 +230,13 @@ Feature: Node
     Then I should Get "key7", "value7" from "root"
     Then I should Get "key8", "value8" from "root"
     Then Get-ting "key9" from "root" should not find
+    When I open a new cursor "cursor" at "root"
+    Then I should get "key0", "value0" next from "cursor"
+    Then I should get "key1", "value1" next from "cursor"
+    Then I should get "key2", "value2" next from "cursor"
+    Then I should get "key3", "value3" next from "cursor"
+    Then I should get "key5", "value5" next from "cursor"
+    Then I should get "key6", "value6" next from "cursor"
+    Then I should get "key7", "value7" next from "cursor"
+    Then I should get "key8", "value8" next from "cursor"
+    Then getting next from "cursor" should not find
