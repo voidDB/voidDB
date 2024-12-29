@@ -75,9 +75,7 @@ func _put(medium Medium, offset int, key []byte, putPtr, putLen int) (
 
 			node.setPointer(index+1, pointer1)
 
-			pointer1 = 0
-
-			promoted = nil
+			pointer1, promoted = 0, nil
 		}
 	}
 

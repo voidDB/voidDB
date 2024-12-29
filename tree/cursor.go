@@ -6,8 +6,7 @@ type Cursor struct {
 	offset int
 	index  int
 
-	ancestors []int
-	anIndices []int
+	stack []ancestor
 }
 
 func NewCursor(medium Medium, offset int) *Cursor {
@@ -16,10 +15,9 @@ func NewCursor(medium Medium, offset int) *Cursor {
 	)
 
 	return &Cursor{
-		medium:    medium,
-		offset:    offset,
-		ancestors: make([]int, 0, maxStackDepth),
-		anIndices: make([]int, 0, maxStackDepth),
+		medium: medium,
+		offset: offset,
+		stack:  make([]ancestor, 0, maxStackDepth),
 	}
 }
 
@@ -32,19 +30,17 @@ func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 	)
 
 	switch {
-	case pointer == 0 && len(cursor.ancestors) == 0:
+	case pointer == 0 && len(cursor.stack) == 0:
 		e = ErrorNotFound
 
 		return
 
 	case pointer == 0:
-		cursor.offset = cursor.ancestors[len(cursor.ancestors)-1]
+		cursor.offset, cursor.index =
+			cursor.stack[len(cursor.stack)-1].offset,
+			cursor.stack[len(cursor.stack)-1].index
 
-		cursor.index = cursor.anIndices[len(cursor.anIndices)-1]
-
-		cursor.ancestors = cursor.ancestors[:len(cursor.ancestors)-1]
-
-		cursor.anIndices = cursor.anIndices[:len(cursor.anIndices)-1]
+		cursor.stack = cursor.stack[:len(cursor.stack)-1]
 
 		return cursor.GetNext()
 
@@ -54,18 +50,18 @@ func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 		return node.key(cursor.index),
 			cursor.medium.Load(pointer, valLen),
 			nil
-
-	default:
-		cursor.ancestors = append(cursor.ancestors, cursor.offset)
-
-		cursor.anIndices = append(cursor.anIndices, cursor.index+1)
-
-		cursor.offset = pointer
-
-		cursor.index = 0
-
-		return cursor.GetNext()
 	}
 
-	return
+	cursor.stack = append(cursor.stack,
+		ancestor{cursor.offset, cursor.index + 1},
+	)
+
+	cursor.offset, cursor.index = pointer, 0
+
+	return cursor.GetNext()
+}
+
+type ancestor struct {
+	offset int
+	index  int
 }
