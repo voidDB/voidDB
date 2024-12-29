@@ -30,3 +30,7 @@ func (m *Medium) Save(bytes []byte) (pointer int, e error) {
 func (m *Medium) Load(offset, length int) []byte {
 	return (*m)[offset : offset+length]
 }
+
+func (m *Medium) Free(offset, length int) {
+	return
+}

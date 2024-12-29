@@ -41,7 +41,7 @@ func _put(medium Medium, offset int, key []byte, putPtr, putLen int) (
 	pointer, pointer1 int, promoted []byte, e error,
 ) {
 	var (
-		node  Node = getNode(medium, offset)
+		node  Node = getNode(medium, offset, true)
 		node1 Node
 		node2 Node
 

@@ -2,7 +2,7 @@ package tree
 
 func Get(medium Medium, offset int, key []byte) (value []byte, e error) {
 	var (
-		node Node = getNode(medium, offset)
+		node Node = getNode(medium, offset, false)
 
 		pointer int
 		valLen  int

@@ -20,7 +20,7 @@ func Del(medium Medium, offset int, key []byte) (pointer int, e error) {
 
 func _del(medium Medium, offset int, key []byte) (newNode Node, e error) {
 	var (
-		node Node = getNode(medium, offset)
+		node Node = getNode(medium, offset, true)
 
 		child  Node
 		child1 Node
@@ -40,6 +40,8 @@ func _del(medium Medium, offset int, key []byte) (newNode Node, e error) {
 
 	case valLen > 0:
 		newNode = node.delete(index)
+
+		medium.Free(pointer, valLen)
 
 		return
 
@@ -65,11 +67,13 @@ func _del(medium Medium, offset int, key []byte) (newNode Node, e error) {
 	case index > 0:
 		child1 = getNode(medium,
 			node.pointer(index-1),
+			true,
 		)
 
 	default: // child is leftmost
 		child1 = getNode(medium,
 			node.pointer(1),
+			true,
 		)
 	}
 
