@@ -42,7 +42,7 @@ func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 	case pointer == 0:
 		cursor.offset, cursor.index =
 			cursor.stack[len(cursor.stack)-1].offset,
-			cursor.stack[len(cursor.stack)-1].index
+			cursor.stack[len(cursor.stack)-1].index+1
 
 		cursor.stack = cursor.stack[:len(cursor.stack)-1]
 
@@ -57,7 +57,7 @@ func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 	}
 
 	cursor.stack = append(cursor.stack,
-		ancestor{cursor.offset, cursor.index + 1},
+		ancestor{cursor.offset, cursor.index},
 	)
 
 	cursor.offset, cursor.index = pointer, 0
