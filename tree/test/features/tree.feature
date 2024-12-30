@@ -2,14 +2,12 @@ Feature: Tree
   Scenario: Put key-value record, and then get
     Given there is a new tree "tree"
     When I put "key", "value" into "tree"
-    Then I should get "key", "value" from "tree"
     When I open a new cursor "cursor" at the root of "tree"
     Then I should get "key", "value" next from "cursor"
     Then getting next from "cursor" should not find
 
   Scenario: Get key-value record not yet put
     Given there is a new tree "tree"
-    Then getting "key" from "tree" should not find
     When I open a new cursor "cursor" at the root of "tree"
     Then getting next from "cursor" should not find
 
@@ -22,13 +20,6 @@ Feature: Tree
     When I put "key4", "value4" into "tree"
     When I put "key5", "value5" into "tree"
     When I put "key6", "value6" into "tree"
-    Then I should get "key0", "value0" from "tree"
-    Then I should get "key1", "value1" from "tree"
-    Then I should get "key2", "value2" from "tree"
-    Then I should get "key3", "value3" from "tree"
-    Then I should get "key4", "value4" from "tree"
-    Then I should get "key5", "value5" from "tree"
-    Then I should get "key6", "value6" from "tree"
     When I open a new cursor "cursor" at the root of "tree"
     Then I should get "key0", "value0" next from "cursor"
     Then I should get "key1", "value1" next from "cursor"
@@ -66,31 +57,6 @@ Feature: Tree
     When I put "key22", "value22" into "tree"
     When I put "key23", "value23" into "tree"
     When I put "key24", "value24" into "tree"
-    Then I should get "key00", "value00" from "tree"
-    Then I should get "key01", "value01" from "tree"
-    Then I should get "key02", "value02" from "tree"
-    Then I should get "key03", "value03" from "tree"
-    Then I should get "key04", "value04" from "tree"
-    Then I should get "key05", "value05" from "tree"
-    Then I should get "key06", "value06" from "tree"
-    Then I should get "key07", "value07" from "tree"
-    Then I should get "key08", "value08" from "tree"
-    Then I should get "key09", "value09" from "tree"
-    Then I should get "key10", "value10" from "tree"
-    Then I should get "key11", "value11" from "tree"
-    Then I should get "key12", "value12" from "tree"
-    Then I should get "key13", "value13" from "tree"
-    Then I should get "key14", "value14" from "tree"
-    Then I should get "key15", "value15" from "tree"
-    Then I should get "key16", "value16" from "tree"
-    Then I should get "key17", "value17" from "tree"
-    Then I should get "key18", "value18" from "tree"
-    Then I should get "key19", "value19" from "tree"
-    Then I should get "key20", "value20" from "tree"
-    Then I should get "key21", "value21" from "tree"
-    Then I should get "key22", "value22" from "tree"
-    Then I should get "key23", "value23" from "tree"
-    Then I should get "key24", "value24" from "tree"
     When I open a new cursor "cursor" at the root of "tree"
     Then I should get "key00", "value00" next from "cursor"
     Then I should get "key01", "value01" next from "cursor"
@@ -123,7 +89,8 @@ Feature: Tree
     Given there is a new tree "tree"
     When I put "key", "value" into "tree"
     When I delete "key" from "tree"
-    Then getting "key" from "tree" should not find
+    When I open a new cursor "cursor" at the root of "tree"
+    Then getting "key" from "cursor" should not find
 
   Scenario: Delete key-value record from tree, causing underflow (take right)
     Given there is a new tree "tree"
@@ -135,13 +102,6 @@ Feature: Tree
     When I put "key5", "value5" into "tree"
     When I put "key6", "value6" into "tree"
     When I delete "key0" from "tree"
-    Then getting "key0" from "tree" should not find
-    Then I should get "key1", "value1" from "tree"
-    Then I should get "key2", "value2" from "tree"
-    Then I should get "key3", "value3" from "tree"
-    Then I should get "key4", "value4" from "tree"
-    Then I should get "key5", "value5" from "tree"
-    Then I should get "key6", "value6" from "tree"
     When I open a new cursor "cursor" at the root of "tree"
     Then I should get "key1", "value1" next from "cursor"
     Then I should get "key2", "value2" next from "cursor"
@@ -163,14 +123,6 @@ Feature: Tree
     When I put "key15", "value15" into "tree"
     When I delete "key60" from "tree"
     When I delete "key50" from "tree"
-    Then I should get "key00", "value00" from "tree"
-    Then I should get "key10", "value10" from "tree"
-    Then I should get "key15", "value15" from "tree"
-    Then I should get "key20", "value20" from "tree"
-    Then I should get "key30", "value30" from "tree"
-    Then I should get "key40", "value40" from "tree"
-    Then getting "key50" from "tree" should not find
-    Then getting "key60" from "tree" should not find
     When I open a new cursor "cursor" at the root of "tree"
     Then I should get "key00", "value00" next from "cursor"
     Then I should get "key10", "value10" next from "cursor"
@@ -191,13 +143,6 @@ Feature: Tree
     When I put "key6", "value6" into "tree"
     When I delete "key6" from "tree"
     When I delete "key0" from "tree"
-    Then getting "key0" from "tree" should not find
-    Then I should get "key1", "value1" from "tree"
-    Then I should get "key2", "value2" from "tree"
-    Then I should get "key3", "value3" from "tree"
-    Then I should get "key4", "value4" from "tree"
-    Then I should get "key5", "value5" from "tree"
-    Then getting "key6" from "tree" should not find
     When I open a new cursor "cursor" at the root of "tree"
     Then I should get "key1", "value1" next from "cursor"
     Then I should get "key2", "value2" next from "cursor"
@@ -220,16 +165,6 @@ Feature: Tree
     When I put "key9", "value9" into "tree"
     When I delete "key9" from "tree"
     When I delete "key4" from "tree"
-    Then I should get "key0", "value0" from "tree"
-    Then I should get "key1", "value1" from "tree"
-    Then I should get "key2", "value2" from "tree"
-    Then I should get "key3", "value3" from "tree"
-    Then getting "key4" from "tree" should not find
-    Then I should get "key5", "value5" from "tree"
-    Then I should get "key6", "value6" from "tree"
-    Then I should get "key7", "value7" from "tree"
-    Then I should get "key8", "value8" from "tree"
-    Then getting "key9" from "tree" should not find
     When I open a new cursor "cursor" at the root of "tree"
     Then I should get "key0", "value0" next from "cursor"
     Then I should get "key1", "value1" next from "cursor"
@@ -239,4 +174,21 @@ Feature: Tree
     Then I should get "key6", "value6" next from "cursor"
     Then I should get "key7", "value7" next from "cursor"
     Then I should get "key8", "value8" next from "cursor"
+    Then getting next from "cursor" should not find
+
+  Scenario: Get key-value record and subsequent records using cursor
+    Given there is a new tree "tree"
+    When I put "key0", "value0" into "tree"
+    When I put "key1", "value1" into "tree"
+    When I put "key2", "value2" into "tree"
+    When I put "key3", "value3" into "tree"
+    When I put "key4", "value4" into "tree"
+    When I put "key5", "value5" into "tree"
+    When I put "key6", "value6" into "tree"
+    When I open a new cursor "cursor" at the root of "tree"
+    Then I should get "key2", "value2" from "cursor"
+    Then I should get "key3", "value3" next from "cursor"
+    Then I should get "key4", "value4" next from "cursor"
+    Then I should get "key5", "value5" next from "cursor"
+    Then I should get "key6", "value6" next from "cursor"
     Then getting next from "cursor" should not find

@@ -15,13 +15,13 @@ func AddStepGetNext(sc *godog.ScenarioContext) {
 	return
 }
 
-func getNext(ctx0 context.Context, keyExpect, valueExpect, cursorName string) (
+func getNext(ctx0 context.Context, keyExpect, valueExpect, name string) (
 	ctx context.Context, e error,
 ) {
 	ctx = ctx0
 
 	var (
-		cursor *tree.Cursor = ctx.Value(ctxKeyCursor{cursorName}).(*tree.Cursor)
+		cursor *tree.Cursor = ctx.Value(ctxKeyCursor{name}).(*tree.Cursor)
 
 		keyActual   []byte
 		valueActual []byte

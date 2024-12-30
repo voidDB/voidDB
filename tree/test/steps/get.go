@@ -21,12 +21,12 @@ func get(ctx0 context.Context, key, valueExpect, name string) (
 	ctx = ctx0
 
 	var (
-		r root = ctx.Value(ctxKeyTree{name}).(root)
+		cursor *tree.Cursor = ctx.Value(ctxKeyCursor{name}).(*tree.Cursor)
 
 		valueActual []byte
 	)
 
-	valueActual, e = tree.Get(&r.medium, r.offset,
+	valueActual, e = cursor.Get(
 		[]byte(key),
 	)
 	if e != nil {

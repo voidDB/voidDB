@@ -1,14 +1,21 @@
 package tree
 
-func Get(medium Medium, offset int, key []byte) (value []byte, e error) {
-	var (
-		node Node = getNode(medium, offset, false)
+func (cursor *Cursor) Get(key []byte) (value []byte, e error) {
+	if len(cursor.stack) > 0 {
+		cursor.offset = cursor.stack[0].offset
+	}
 
+	return cursor._get(key)
+}
+
+func (cursor *Cursor) _get(key []byte) (value []byte, e error) {
+	var (
+		node    Node = getNode(cursor.medium, cursor.offset, false)
 		pointer int
 		valLen  int
 	)
 
-	_, pointer, valLen = node.search(key)
+	cursor.index, pointer, valLen = node.search(key)
 
 	switch {
 	case pointer == 0:
@@ -17,10 +24,16 @@ func Get(medium Medium, offset int, key []byte) (value []byte, e error) {
 		return
 
 	case valLen > 0:
-		value = medium.Load(pointer, valLen)
+		defer func() { cursor.index++ }()
 
-		return
+		return cursor.medium.Load(pointer, valLen), nil
 	}
 
-	return Get(medium, pointer, key)
+	cursor.stack = append(cursor.stack,
+		ancestor{cursor.offset, cursor.index},
+	)
+
+	cursor.offset = pointer
+
+	return cursor._get(key)
 }

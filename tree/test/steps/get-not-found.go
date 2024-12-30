@@ -21,10 +21,10 @@ func getNotFound(ctx0 context.Context, key, name string) (
 	ctx = ctx0
 
 	var (
-		r root = ctx.Value(ctxKeyTree{name}).(root)
+		cursor *tree.Cursor = ctx.Value(ctxKeyCursor{name}).(*tree.Cursor)
 	)
 
-	_, e = tree.Get(&r.medium, r.offset,
+	_, e = cursor.Get(
 		[]byte(key),
 	)
 
