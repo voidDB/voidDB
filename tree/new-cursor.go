@@ -12,6 +12,7 @@ func NewCursor(medium Medium, offset int) *Cursor {
 	return &Cursor{
 		medium: medium,
 		offset: offset,
+		index:  -1,
 		stack:  make([]ancestor, 0, maxStackDepth),
 	}
 }

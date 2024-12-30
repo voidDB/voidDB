@@ -1,6 +1,12 @@
 package tree
 
 func (cursor *Cursor) GetNext() (key, value []byte, e error) {
+	cursor.index++
+
+	return cursor._getNext()
+}
+
+func (cursor *Cursor) _getNext() (key, value []byte, e error) {
 	var (
 		node Node = getNode(cursor.medium, cursor.offset, false)
 
@@ -21,11 +27,9 @@ func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 
 		cursor.stack = cursor.stack[:len(cursor.stack)-1]
 
-		return cursor.GetNext()
+		return cursor._getNext()
 
 	case valLen > 0:
-		defer func() { cursor.index++ }()
-
 		return node.key(cursor.index),
 			cursor.medium.Load(pointer, valLen),
 			nil
@@ -37,10 +41,5 @@ func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 
 	cursor.offset, cursor.index = pointer, 0
 
-	return cursor.GetNext()
-}
-
-type ancestor struct {
-	offset int
-	index  int
+	return cursor._getNext()
 }

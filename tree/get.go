@@ -1,9 +1,7 @@
 package tree
 
 func (cursor *Cursor) Get(key []byte) (value []byte, e error) {
-	if len(cursor.stack) > 0 {
-		cursor.offset = cursor.stack[0].offset
-	}
+	cursor.reset()
 
 	return cursor._get(key)
 }
@@ -24,8 +22,6 @@ func (cursor *Cursor) _get(key []byte) (value []byte, e error) {
 		return
 
 	case valLen > 0:
-		defer func() { cursor.index++ }()
-
 		return cursor.medium.Load(pointer, valLen), nil
 	}
 
