@@ -52,6 +52,9 @@ func _put(medium Medium, offset int, key []byte, putPtr, putLen int) (
 	index, pointer, valLen = node.search(key)
 
 	switch {
+	case pointer == tombstone:
+		fallthrough
+
 	case pointer == 0:
 		node = node.insert(index, putPtr, putLen, key)
 

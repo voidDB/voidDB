@@ -120,7 +120,7 @@ Feature: Tree
     Then I should get "key24", "value24" next using "cursor"
     Then getting next using "cursor" should not find
 
-  Scenario: Delete key-value record using tree, and then get
+  Scenario: Delete key-value record, and then get
     Given there is a new tree "tree"
     When I put "key", "value" into "tree"
     When I delete "key" from "tree"
@@ -129,7 +129,17 @@ Feature: Tree
     Then getting next using "cursor" should not find
     Then getting "key" using "cursor" should not find
 
-  Scenario: Delete key-value record using tree, causing underflow (take right)
+  Scenario: Delete key-value record, put it back, and then get
+    Given there is a new tree "tree"
+    When I put "key", "value" into "tree"
+    When I delete "key" from "tree"
+    When I put "key", "value" into "tree"
+    Then I should get "key", "value" from "tree"
+    When I open a new cursor "cursor" at the root of "tree"
+    Then I should get "key", "value" next using "cursor"
+    Then getting next using "cursor" should not find
+
+  Scenario: Delete key-value record, causing underflow (take right)
     Given there is a new tree "tree"
     When I put "key0", "value0" into "tree"
     When I put "key1", "value1" into "tree"
@@ -155,7 +165,7 @@ Feature: Tree
     Then I should get "key6", "value6" next using "cursor"
     Then getting next using "cursor" should not find
 
-  Scenario: Delete key-value record using tree, causing underflow (take left)
+  Scenario: Delete key-value record, causing underflow (take left)
     Given there is a new tree "tree"
     When I put "key00", "value00" into "tree"
     When I put "key10", "value10" into "tree"
@@ -184,7 +194,7 @@ Feature: Tree
     Then I should get "key40", "value40" next using "cursor"
     Then getting next using "cursor" should not find
 
-  Scenario: Delete key-value record using tree, causing underflow (merge right)
+  Scenario: Delete key-value record, causing underflow (merge right)
     Given there is a new tree "tree"
     When I put "key0", "value0" into "tree"
     When I put "key1", "value1" into "tree"
@@ -210,7 +220,7 @@ Feature: Tree
     Then I should get "key5", "value5" next using "cursor"
     Then getting next using "cursor" should not find
 
-  Scenario: Delete key-value record using tree, causing underflow (merge left)
+  Scenario: Delete key-value record, causing underflow (merge left)
     Given there is a new tree "tree"
     When I put "key0", "value0" into "tree"
     When I put "key1", "value1" into "tree"

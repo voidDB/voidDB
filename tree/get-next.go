@@ -15,6 +15,9 @@ func (cursor *Cursor) _getNext() (key, value []byte, e error) {
 	)
 
 	switch {
+	case pointer == tombstone:
+		return cursor.GetNext()
+
 	case pointer == 0 && len(cursor.stack) == 0:
 		e = ErrorNotFound
 

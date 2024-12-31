@@ -11,6 +11,9 @@ func Get(medium Medium, offset int, key []byte) (value []byte, e error) {
 	_, pointer, valLen = node.search(key)
 
 	switch {
+	case pointer == tombstone:
+		fallthrough
+
 	case pointer == 0:
 		return nil, ErrorNotFound
 
@@ -38,10 +41,11 @@ func (cursor *Cursor) _get(key []byte) (value []byte, e error) {
 	cursor.index, pointer, valLen = node.search(key)
 
 	switch {
+	case pointer == tombstone:
+		fallthrough
+
 	case pointer == 0:
 		return nil, ErrorNotFound
-
-		return
 
 	case valLen > 0:
 		return cursor.medium.Load(pointer, valLen), nil
