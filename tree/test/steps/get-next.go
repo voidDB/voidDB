@@ -10,7 +10,7 @@ import (
 )
 
 func AddStepGetNext(sc *godog.ScenarioContext) {
-	sc.Then(`^I should get "([^"]*)", "([^"]*)" next from "([^"]*)"$`, getNext)
+	sc.Then(`^I should get "([^"]*)", "([^"]*)" next using "([^"]*)"$`, getNext)
 
 	return
 }

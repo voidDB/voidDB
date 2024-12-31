@@ -10,7 +10,7 @@ import (
 )
 
 func AddStepGetNextNotFound(sc *godog.ScenarioContext) {
-	sc.Then(`^getting next from "([^"]*)" should not find$`, getNextNotFound)
+	sc.Then(`^getting next using "([^"]*)" should not find$`, getNextNotFound)
 
 	return
 }
