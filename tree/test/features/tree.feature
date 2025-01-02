@@ -261,15 +261,22 @@ Feature: Tree
     When I put "key1", "value1" into "tree"
     When I put "key2", "value2" into "tree"
     When I put "key3", "value3" into "tree"
-    When I put "key4", "value4" into "tree"
-    When I put "key5", "value5" into "tree"
-    When I put "key6", "value6" into "tree"
     When I open a new cursor "cursor" at the root of "tree"
     Then I should get "key2", "value2" using "cursor"
     Then I should get "key3", "value3" next using "cursor"
-    Then I should get "key4", "value4" next using "cursor"
-    Then I should get "key5", "value5" next using "cursor"
-    Then I should get "key6", "value6" next using "cursor"
     Then getting next using "cursor" should not find
     Then I should get "key0", "value0" using "cursor"
     Then I should get "key1", "value1" next using "cursor"
+
+  Scenario: Delete key-value record using cursor
+    Given there is a new tree "tree"
+    When I put "key0", "value0" into "tree"
+    When I put "key1", "value1" into "tree"
+    When I put "key2", "value2" into "tree"
+    When I open a new cursor "cursor" at the root of "tree"
+    Then I should get "key0", "value0" next using "cursor"
+    When I delete using "cursor"
+    Then I should get "key1", "value1" next using "cursor"
+    Then I should get "key2", "value2" next using "cursor"
+    Then getting next using "cursor" should not find
+    Then getting "key0" using "cursor" should not find
