@@ -37,7 +37,7 @@ func Put(medium Medium, offset int, key, value []byte) (pointer int, e error) {
 	return
 }
 
-func _put(medium Medium, offset int, key []byte, putPtr, putLen int) (
+func _put(medium Medium, offset int, key []byte, putPointer, putValLen int) (
 	pointer, pointer1 int, promoted []byte, e error,
 ) {
 	var (
@@ -52,18 +52,20 @@ func _put(medium Medium, offset int, key []byte, putPtr, putLen int) (
 	index, pointer, valLen = node.search(key)
 
 	switch {
-	case pointer == tombstone:
-		fallthrough
-
 	case pointer == 0:
-		node = node.insert(index, putPtr, putLen, key)
+		node = node.insert(index, putPointer, putValLen, key)
 
 	case valLen > 0:
-		node = node.update(index, putPtr, putLen)
+		medium.Free(pointer, valLen)
+
+		fallthrough
+
+	case pointer == tombstone:
+		node = node.update(index, putPointer, putValLen)
 
 	default:
 		pointer, pointer1, promoted, e = _put(
-			medium, pointer, key, putPtr, putLen,
+			medium, pointer, key, putPointer, putValLen,
 		)
 		if e != nil {
 			return
