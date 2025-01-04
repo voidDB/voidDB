@@ -11,6 +11,8 @@ import (
 func AddStepPut(sc *godog.ScenarioContext) {
 	sc.When(`^I put "([^"]*)", "([^"]*)" into "([^"]*)"$`, put)
 
+	sc.When(`^I put "([^"]*)", "([^"]*)" using "([^"]*)"$`, putUsingCursor)
+
 	return
 }
 
@@ -32,6 +34,26 @@ func put(ctx0 context.Context, key, value, name string) (
 	}
 
 	ctx = context.WithValue(ctx, ctxKeyTree{name}, r)
+
+	return
+}
+
+func putUsingCursor(ctx0 context.Context, key, value, name string) (
+	ctx context.Context, e error,
+) {
+	ctx = ctx0
+
+	var (
+		cursor *tree.Cursor = ctx.Value(ctxKeyCursor{name}).(*tree.Cursor)
+	)
+
+	e = cursor.Put(
+		[]byte(key),
+		[]byte(value),
+	)
+	if e != nil {
+		return
+	}
 
 	return
 }

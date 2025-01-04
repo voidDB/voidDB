@@ -12,6 +12,8 @@ type Cursor struct {
 func (cursor *Cursor) reset() {
 	if len(cursor.stack) > 0 {
 		cursor.offset = cursor.stack[0].offset
+
+		cursor.stack = cursor.stack[:0]
 	}
 
 	cursor.index = -1

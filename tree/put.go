@@ -80,7 +80,7 @@ func _put(medium Medium, offset int, key []byte, putPointer, putValLen int) (
 
 			node.setPointer(index+1, pointer1)
 
-			pointer1, promoted = 0, nil
+			pointer1 = 0
 		}
 	}
 
@@ -101,6 +101,22 @@ func _put(medium Medium, offset int, key []byte, putPointer, putValLen int) (
 	}
 
 	pointer, e = medium.Save(node)
+	if e != nil {
+		return
+	}
+
+	return
+}
+
+func (cursor *Cursor) Put(key, value []byte) (e error) {
+	cursor.reset()
+
+	cursor.offset, e = Put(cursor.medium, cursor.offset, key, value)
+	if e != nil {
+		return
+	}
+
+	_, e = cursor._get(key)
 	if e != nil {
 		return
 	}
