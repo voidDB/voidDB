@@ -2,12 +2,17 @@ package tree
 
 import (
 	"encoding/binary"
+
+	"github.com/voidDB/voidDB/common"
 )
 
 const (
-	lengthSize  = 4
-	magicSize   = 8
-	pointerSize = 8
+	lengthSize    = 4
+	magicSize     = 8
+	maxKeySize    = 512
+	maxNodeLength = 7
+	pageSize      = common.PageSize
+	pointerSize   = common.PointerSize
 
 	nodeMagic = "voidNODE"
 )
@@ -107,7 +112,7 @@ func (node *Node) _key(index int) []byte {
 		offset = 512
 	)
 
-	return (*node)[offset+MaxKeySize*index : offset+MaxKeySize*(index+1)]
+	return (*node)[offset+maxKeySize*index : offset+maxKeySize*(index+1)]
 }
 
 func (node *Node) key(index int) []byte {
@@ -128,7 +133,7 @@ func (node *Node) setKey(index int, key []byte) {
 }
 
 func (node *Node) length() (l int) {
-	for l = 0; l < MaxNodeLength; l++ {
+	for l = 0; l < maxNodeLength; l++ {
 		if node.keyLen(l) == 0 {
 			break
 		}

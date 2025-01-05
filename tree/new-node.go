@@ -1,7 +1,7 @@
 package tree
 
 func NewNode() (node Node) {
-	node = make([]byte, PageSize)
+	node = make([]byte, pageSize)
 
 	node.setMagic()
 

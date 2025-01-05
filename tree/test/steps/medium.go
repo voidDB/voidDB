@@ -4,7 +4,7 @@ import (
 	//"encoding/hex"
 	//"log"
 
-	"github.com/voidDB/voidDB/tree"
+	"github.com/voidDB/voidDB/common"
 )
 
 type Medium []byte
@@ -16,7 +16,7 @@ func (m *Medium) Save(bytes []byte) (pointer int, e error) {
 
 	*m = append(*m, // padding
 		make([]byte,
-			tree.PageSize-(len(bytes)%tree.PageSize),
+			common.PageSize-(len(bytes)%common.PageSize),
 		)...,
 	)
 

@@ -33,7 +33,7 @@ func (cursor *Cursor) _getPrev() (key, value []byte, e error) {
 
 	node = getNode(cursor.medium, cursor.offset, false)
 
-	if cursor.index == MaxNodeLength {
+	if cursor.index == maxNodeLength {
 		cursor.index = node.length()
 	}
 
@@ -55,7 +55,7 @@ func (cursor *Cursor) _getPrev() (key, value []byte, e error) {
 		ancestor{cursor.offset, cursor.index},
 	)
 
-	cursor.offset, cursor.index = pointer, MaxNodeLength
+	cursor.offset, cursor.index = pointer, maxNodeLength
 
 	return cursor._getPrev()
 }

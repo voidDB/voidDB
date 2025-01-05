@@ -8,7 +8,7 @@ func (node *Node) split() (newNode0, newNode1 Node, promoted []byte) {
 	newNode0 = NewNode()
 	newNode1 = NewNode()
 
-	for i = 0; i < MaxNodeLength/2; i++ {
+	for i = 0; i < maxNodeLength/2; i++ {
 		copyNodeData(&newNode0, node, i, 0)
 	}
 
@@ -27,11 +27,11 @@ func (node *Node) split() (newNode0, newNode1 Node, promoted []byte) {
 		promoted = node.key(i - 1)
 	}
 
-	for i = i; i < MaxNodeLength; i++ {
-		copyNodeData(&newNode1, node, i-MaxNodeLength/2, MaxNodeLength/2)
+	for i = i; i < maxNodeLength; i++ {
+		copyNodeData(&newNode1, node, i-maxNodeLength/2, maxNodeLength/2)
 	}
 
-	newNode1.setPointer(i-MaxNodeLength/2,
+	newNode1.setPointer(i-maxNodeLength/2,
 		node.pointer(i),
 	)
 
