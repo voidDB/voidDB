@@ -1,6 +1,6 @@
 package tree
 
-func Put(medium Medium, offset int, key, value []byte) (pointer int, e error) {
+func put(medium Medium, offset int, key, value []byte) (pointer int, e error) {
 	var (
 		newRoot  Node
 		pointer1 int
@@ -111,15 +111,12 @@ func _put(medium Medium, offset int, key []byte, putPointer, putValLen int) (
 func (cursor *Cursor) Put(key, value []byte) (e error) {
 	cursor.reset()
 
-	cursor.offset, e = Put(cursor.medium, cursor.offset, key, value)
+	cursor.offset, e = put(cursor.medium, cursor.offset, key, value)
 	if e != nil {
 		return
 	}
 
-	_, e = cursor._get(key)
-	if e != nil {
-		return
-	}
+	cursor.latest = key
 
 	return
 }

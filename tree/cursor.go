@@ -6,7 +6,8 @@ type Cursor struct {
 	offset int
 	index  int
 
-	stack []ancestor
+	stack  []ancestor
+	latest []byte
 }
 
 func (cursor *Cursor) reset() {
@@ -17,6 +18,20 @@ func (cursor *Cursor) reset() {
 	}
 
 	cursor.index = -1
+
+	cursor.latest = nil
+
+	return
+}
+
+func (cursor *Cursor) resume() {
+	if cursor.latest == nil {
+		return
+	}
+
+	cursor._get(cursor.latest)
+
+	cursor.latest = nil
 
 	return
 }

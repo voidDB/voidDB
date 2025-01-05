@@ -1,6 +1,8 @@
 package tree
 
 func (cursor *Cursor) GetNext() (key, value []byte, e error) {
+	cursor.resume()
+
 	cursor.index++
 
 	return cursor._getNext()

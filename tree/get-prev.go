@@ -1,6 +1,8 @@
 package tree
 
 func (cursor *Cursor) GetPrev() (key, value []byte, e error) {
+	cursor.resume()
+
 	cursor.index--
 
 	return cursor._getPrev()
@@ -32,21 +34,21 @@ func (cursor *Cursor) _getPrev() (key, value []byte, e error) {
 	node = getNode(cursor.medium, cursor.offset, false)
 
 	if cursor.index == MaxNodeLength {
-		cursor.index = node.length() - 1
-
-		return cursor._getPrev()
+		cursor.index = node.length()
 	}
 
-	pointer, valLen = node.pointer(cursor.index), node.valLen(cursor.index)
+	pointer = node.pointer(cursor.index)
 
-	switch {
-	case valLen > 0:
+	if pointer == 0 || pointer == tombstone {
+		return cursor.GetPrev()
+	}
+
+	valLen = node.valLen(cursor.index)
+
+	if valLen > 0 {
 		return node.key(cursor.index),
 			cursor.medium.Load(pointer, valLen),
 			nil
-
-	case pointer == tombstone:
-		return cursor.GetPrev()
 	}
 
 	cursor.stack = append(cursor.stack,

@@ -5,41 +5,13 @@ const (
 	// hence the least significant 11 bits are free to mean other things.
 )
 
-func Del(medium Medium, offset int, key []byte) (pointer int, e error) {
-	var (
-		node Node = getNode(medium, offset, true)
+func (cursor *Cursor) Del() (e error) {
+	cursor.resume()
 
-		index  int
-		valLen int
-	)
-
-	index, pointer, valLen = node.search(key)
-
-	switch {
-	case pointer == tombstone:
-		fallthrough
-
-	case pointer == 0:
-		return 0, ErrorNotFound
-
-	case valLen > 0:
-		medium.Free(pointer, valLen)
-
-		node = node.update(index, tombstone, 0)
-
-	default:
-		pointer, e = Del(medium, pointer, key)
-		if e != nil {
-			return
-		}
-
-		node = node.update(index, pointer, 0)
-	}
-
-	return medium.Save(node)
+	return cursor._del()
 }
 
-func (cursor *Cursor) Del() (e error) {
+func (cursor *Cursor) _del() (e error) {
 	var (
 		node Node = getNode(cursor.medium, cursor.offset, true)
 
