@@ -9,7 +9,7 @@ import (
 
 type Medium []byte
 
-func (m *Medium) Save(bytes []byte) (pointer int, e error) {
+func (m *Medium) Save(bytes []byte) (pointer int) {
 	pointer = len(*m)
 
 	*m = append(*m, bytes...)

@@ -6,6 +6,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/tree"
 )
 
@@ -28,10 +29,10 @@ func getPrevNotFound(ctx0 context.Context, cursorName string) (
 
 	_, _, e = cursor.GetPrev()
 
-	assert.Equal(
+	assert.ErrorIs(
 		godog.T(ctx),
-		tree.ErrorNotFound,
 		e,
+		common.ErrorNotFound,
 	)
 
 	e = nil

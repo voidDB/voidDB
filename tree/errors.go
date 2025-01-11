@@ -1,9 +1,10 @@
 package tree
 
 import (
-	"errors"
+	"github.com/voidDB/voidDB/common"
 )
 
 var (
-	ErrorNotFound = errors.New("Not found")
+	errorCorrupt  = common.ErrorCorrupt
+	errorNotFound = common.ErrorNotFound
 )

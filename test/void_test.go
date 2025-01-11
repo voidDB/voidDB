@@ -15,6 +15,14 @@ func TestVoid(t *testing.T) {
 			teststeps.AddStepWriteZeroFile(sc)
 			teststeps.AddStepReadZeroFile(sc)
 			teststeps.AddStepTearDown(sc)
+
+			teststeps.AddStepNewVoid(sc)
+			teststeps.AddStepBeginTxn(sc)
+			teststeps.AddStepGet(sc)
+			teststeps.AddStepPut(sc)
+			teststeps.AddStepDel(sc)
+			teststeps.AddStepCommitTxn(sc)
+			teststeps.AddStepAbortTxn(sc)
 		}
 
 		options = &godog.Options{

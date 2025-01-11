@@ -17,7 +17,7 @@ func (cursor *Cursor) _getPrev() (key, value []byte, e error) {
 
 	switch {
 	case cursor.index < 0 && len(cursor.stack) == 0:
-		e = ErrorNotFound
+		e = errorNotFound
 
 		return
 
@@ -31,7 +31,10 @@ func (cursor *Cursor) _getPrev() (key, value []byte, e error) {
 		return cursor._getPrev()
 	}
 
-	node = getNode(cursor.medium, cursor.offset, false)
+	node, e = getNode(cursor.medium, cursor.offset, false)
+	if e != nil {
+		return
+	}
 
 	if cursor.index == maxNodeLength {
 		cursor.index = node.length()

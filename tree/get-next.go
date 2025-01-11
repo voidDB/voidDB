@@ -10,11 +10,17 @@ func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 
 func (cursor *Cursor) _getNext() (key, value []byte, e error) {
 	var (
-		node Node = getNode(cursor.medium, cursor.offset, false)
-
-		pointer int = node.pointer(cursor.index)
-		valLen  int = node.valLen(cursor.index)
+		node    Node
+		pointer int
+		valLen  int
 	)
+
+	node, e = getNode(cursor.medium, cursor.offset, false)
+	if e != nil {
+		return
+	}
+
+	pointer, valLen = node.pointer(cursor.index), node.valLen(cursor.index)
 
 	switch {
 	case valLen > 0:
@@ -44,7 +50,7 @@ func (cursor *Cursor) _getNext() (key, value []byte, e error) {
 		return cursor._getNext()
 	}
 
-	e = ErrorNotFound
+	e = errorNotFound
 
 	return
 }

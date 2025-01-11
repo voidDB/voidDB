@@ -24,12 +24,9 @@ func newTree(ctx0 context.Context, name string) (
 		offset int
 	)
 
-	offset, e = medium.Save(
+	offset = medium.Save(
 		tree.NewNode(),
 	)
-	if e != nil {
-		return
-	}
 
 	ctx = context.WithValue(ctx, ctxKeyTree{name},
 		root{medium, offset},

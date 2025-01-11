@@ -8,11 +8,15 @@ func (cursor *Cursor) Get(key []byte) (value []byte, e error) {
 
 func (cursor *Cursor) _get(key []byte) (value []byte, e error) {
 	var (
-		node Node = getNode(cursor.medium, cursor.offset, false)
-
+		node    Node
 		pointer int
 		valLen  int
 	)
+
+	node, e = getNode(cursor.medium, cursor.offset, false)
+	if e != nil {
+		return
+	}
 
 	cursor.index, pointer, valLen = node.search(key)
 
@@ -21,7 +25,7 @@ func (cursor *Cursor) _get(key []byte) (value []byte, e error) {
 		fallthrough
 
 	case pointer == 0:
-		return nil, ErrorNotFound
+		return nil, errorNotFound
 
 	case valLen > 0:
 		return cursor.medium.Load(pointer, valLen), nil

@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"bytes"
 	"encoding/binary"
 
 	"github.com/voidDB/voidDB/common"
@@ -30,6 +31,13 @@ func (node *Node) setMagic() {
 	)
 
 	return
+}
+
+func (node *Node) isNode() bool {
+	return bytes.Equal(
+		node._magic(),
+		[]byte(nodeMagic),
+	)
 }
 
 func (node *Node) _keyLen(index int) []byte {

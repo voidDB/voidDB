@@ -13,11 +13,15 @@ func (cursor *Cursor) Del() (e error) {
 
 func (cursor *Cursor) _del() (e error) {
 	var (
-		node Node = getNode(cursor.medium, cursor.offset, true)
-
 		i       int
+		node    Node
 		pointer int
 	)
+
+	node, e = getNode(cursor.medium, cursor.offset, true)
+	if e != nil {
+		return
+	}
 
 	cursor.medium.Free(
 		node.pointer(cursor.index),
@@ -26,22 +30,19 @@ func (cursor *Cursor) _del() (e error) {
 
 	node = node.update(cursor.index, tombstone, 0)
 
-	pointer, e = cursor.medium.Save(node)
-	if e != nil {
-		return
-	}
+	pointer = cursor.medium.Save(node)
 
 	cursor.offset = pointer
 
 	for i = len(cursor.stack) - 1; i > -1; i-- {
-		node = getNode(cursor.medium, cursor.stack[i].offset, true)
-
-		node = node.update(cursor.stack[i].index, pointer, 0)
-
-		pointer, e = cursor.medium.Save(node)
+		node, e = getNode(cursor.medium, cursor.stack[i].offset, true)
 		if e != nil {
 			return
 		}
+
+		node = node.update(cursor.stack[i].index, pointer, 0)
+
+		pointer = cursor.medium.Save(node)
 
 		cursor.stack[i].offset = pointer
 	}

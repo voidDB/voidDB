@@ -7,10 +7,7 @@ func put(medium Medium, offset int, key, value []byte) (pointer int, e error) {
 		promoted []byte
 	)
 
-	pointer, e = medium.Save(value)
-	if e != nil {
-		return
-	}
+	pointer = medium.Save(value)
 
 	pointer, pointer1, promoted, e = _put(
 		medium, offset, key, pointer, len(value),
@@ -29,10 +26,7 @@ func put(medium Medium, offset int, key, value []byte) (pointer int, e error) {
 
 	newRoot.setPointer(1, pointer1)
 
-	pointer, e = medium.Save(newRoot)
-	if e != nil {
-		return
-	}
+	pointer = medium.Save(newRoot)
 
 	return
 }
@@ -41,13 +35,17 @@ func _put(medium Medium, offset int, key []byte, putPointer, putValLen int) (
 	pointer, pointer1 int, promoted []byte, e error,
 ) {
 	var (
-		node  Node = getNode(medium, offset, true)
-		node1 Node
-		node2 Node
-
 		index  int
+		node   Node
+		node1  Node
+		node2  Node
 		valLen int
 	)
+
+	node, e = getNode(medium, offset, true)
+	if e != nil {
+		return
+	}
 
 	index, pointer, valLen = node.search(key)
 
@@ -87,23 +85,12 @@ func _put(medium Medium, offset int, key []byte, putPointer, putValLen int) (
 	if node.isFull() {
 		node1, node2, promoted = node.split()
 
-		pointer, e = medium.Save(node1)
-		if e != nil {
-			return
-		}
-
-		pointer1, e = medium.Save(node2)
-		if e != nil {
-			return
-		}
+		pointer, pointer1 = medium.Save(node1), medium.Save(node2)
 
 		return
 	}
 
-	pointer, e = medium.Save(node)
-	if e != nil {
-		return
-	}
+	pointer = medium.Save(node)
 
 	return
 }
