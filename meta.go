@@ -2,15 +2,14 @@ package voidDB
 
 import (
 	"bytes"
-	"encoding/binary"
 	"time"
 
 	"github.com/voidDB/voidDB/common"
 )
 
 const (
-	pageSize    = common.PageSize
-	pointerSize = common.PointerSize
+	pageSize = common.PageSize
+	wordSize = common.WordSize
 
 	metaMagic = "voidMETA"
 	version   = 0
@@ -40,164 +39,129 @@ func newMetaInit() (meta Meta) {
 	return
 }
 
-func (meta *Meta) makeCopy() (copi Meta) {
+func (meta Meta) makeCopy() (copi Meta) {
 	copi = make([]byte, pageSize)
 
-	copy(copi, *meta)
+	copy(copi, meta)
 
 	return
 }
 
-func (meta *Meta) _magic() []byte {
-	const (
-		size = 8
-	)
-
-	return (*meta)[:size]
+func (meta Meta) magic() []byte {
+	return common.Field(meta, 0, wordSize)
 }
 
-func (meta *Meta) setMagic() {
+func (meta Meta) setMagic() {
 	copy(
-		meta._magic(),
+		meta.magic(),
 		[]byte(metaMagic),
 	)
 
 	return
 }
 
-func (meta *Meta) _version() []byte {
-	const (
-		offset = 8
-		size   = 8
-	)
-
-	return (*meta)[offset : offset+size]
+func (meta Meta) version() []byte {
+	return common.Field(meta, wordSize, wordSize)
 }
 
-func (meta *Meta) version() int {
-	return int(
-		binary.BigEndian.Uint64(
-			meta._version(),
-		),
+func (meta Meta) getVersion() int {
+	return common.GetInt(
+		meta.version(),
 	)
 }
 
-func (meta *Meta) setVersion() {
-	binary.BigEndian.PutUint64(
-		meta._version(),
-		uint64(version),
+func (meta Meta) setVersion() {
+	common.PutInt(
+		meta.version(),
+		version,
 	)
 
 	return
 }
 
-func (meta *Meta) isMeta() bool {
+func (meta Meta) isMeta() bool {
 	return bytes.Equal(
-		meta._magic(),
+		meta.magic(),
 		[]byte(metaMagic),
 	) &&
-		meta.version() == version
+		meta.getVersion() == version
 }
 
-func (meta *Meta) _timestamp() []byte {
-	const (
-		offset = 16
-		size   = 8
-	)
-
-	return (*meta)[offset : offset+size]
+func (meta Meta) timestamp() []byte {
+	return common.Field(meta, 2*wordSize, wordSize)
 }
 
-func (meta *Meta) timestamp() time.Time {
+func (meta Meta) getTimestamp() time.Time {
 	return time.Unix(0,
 		int64(
-			binary.BigEndian.Uint64(
-				meta._timestamp(),
+			common.GetInt(
+				meta.timestamp(),
 			),
 		),
 	)
 }
 
-func (meta *Meta) setTimestamp() {
-	binary.BigEndian.PutUint64(
-		meta._timestamp(),
-		uint64(time.Now().UnixNano()),
+func (meta Meta) setTimestamp() {
+	common.PutInt(
+		meta.timestamp(),
+		int(time.Now().UnixNano()),
 	)
 
 	return
 }
 
-func (meta *Meta) _serialNumber() []byte {
-	const (
-		offset = 24
-		size   = 8
-	)
-
-	return (*meta)[offset : offset+size]
+func (meta Meta) serialNumber() []byte {
+	return common.Field(meta, 3*wordSize, wordSize)
 }
 
-func (meta *Meta) serialNumber() int {
-	return int(
-		binary.BigEndian.Uint64(
-			meta._serialNumber(),
-		),
+func (meta Meta) getSerialNumber() int {
+	return common.GetInt(
+		meta.serialNumber(),
 	)
 }
 
-func (meta *Meta) setSerialNumber(number int) {
-	binary.BigEndian.PutUint64(
-		meta._serialNumber(),
-		uint64(number),
+func (meta Meta) setSerialNumber(number int) {
+	common.PutInt(
+		meta.serialNumber(),
+		number,
 	)
 
 	return
 }
 
-func (meta *Meta) _rootNodePointer() []byte {
-	const (
-		offset = 32
-	)
-
-	return (*meta)[offset : offset+pointerSize]
+func (meta Meta) rootNodePointer() []byte {
+	return common.Field(meta, 4*wordSize, wordSize)
 }
 
-func (meta *Meta) rootNodePointer() int {
-	return int(
-		binary.BigEndian.Uint64(
-			meta._rootNodePointer(),
-		),
+func (meta Meta) getRootNodePointer() int {
+	return common.GetInt(
+		meta.rootNodePointer(),
 	)
 }
 
-func (meta *Meta) setRootNodePointer(pointer int) {
-	binary.BigEndian.PutUint64(
-		meta._rootNodePointer(),
-		uint64(pointer),
+func (meta Meta) setRootNodePointer(pointer int) {
+	common.PutInt(
+		meta.rootNodePointer(),
+		pointer,
 	)
 
 	return
 }
 
-func (meta *Meta) _frontierPointer() []byte {
-	const (
-		offset = 40
-	)
-
-	return (*meta)[offset : offset+pointerSize]
+func (meta Meta) frontierPointer() []byte {
+	return common.Field(meta, 5*wordSize, wordSize)
 }
 
-func (meta *Meta) frontierPointer() int {
-	return int(
-		binary.BigEndian.Uint64(
-			meta._frontierPointer(),
-		),
+func (meta Meta) getFrontierPointer() int {
+	return common.GetInt(
+		meta.frontierPointer(),
 	)
 }
 
-func (meta *Meta) setFrontierPointer(size int) {
-	binary.BigEndian.PutUint64(
-		meta._frontierPointer(),
-		uint64(size),
+func (meta Meta) setFrontierPointer(size int) {
+	common.PutInt(
+		meta.frontierPointer(),
+		size,
 	)
 
 	return

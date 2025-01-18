@@ -1,5 +1,10 @@
 package voidDB
 
+import (
+	"github.com/voidDB/voidDB/common"
+	"github.com/voidDB/voidDB/cursor"
+)
+
 type Txn struct {
 	read  readFunc
 	write writeFunc
@@ -9,7 +14,7 @@ type Txn struct {
 	saveList map[int][]byte
 	freeList map[int]int
 
-	Cursor
+	*cursor.Cursor
 }
 
 func (txn *Txn) Abort() (e error) {
@@ -59,10 +64,12 @@ func newTxn(read readFunc, write writeFunc) (txn *Txn, e error) {
 	txn.meta.setTimestamp()
 
 	txn.meta.setSerialNumber(
-		txn.meta.serialNumber() + 1,
+		txn.meta.getSerialNumber() + 1,
 	)
 
-	txn.Cursor = newCursor(txn)
+	txn.Cursor = cursor.NewCursor(medium{txn},
+		txn.meta.getRootNodePointer(),
+	)
 
 	return
 }
@@ -75,7 +82,7 @@ func (txn *Txn) getMeta() (e error) {
 
 	switch {
 	case meta0.isMeta() && meta1.isMeta() &&
-		meta0.serialNumber() < meta1.serialNumber():
+		meta0.getSerialNumber() < meta1.getSerialNumber():
 		txn.meta = meta1.makeCopy()
 
 	case meta0.isMeta() && meta1.isMeta():
@@ -88,7 +95,7 @@ func (txn *Txn) getMeta() (e error) {
 		txn.meta = meta1.makeCopy()
 
 	default:
-		e = errorInvalid
+		e = common.ErrorInvalid
 	}
 
 	return
@@ -96,7 +103,7 @@ func (txn *Txn) getMeta() (e error) {
 
 func (txn *Txn) putMeta() error {
 	return txn.write(txn.meta,
-		txn.meta.serialNumber()%2*pageSize,
+		txn.meta.getSerialNumber()%2*pageSize,
 	)
 }
 
@@ -125,7 +132,7 @@ func (txn medium) Save(data []byte) (pointer int) {
 		)
 	)
 
-	pointer = txn.meta.frontierPointer() // TODO: reuse free space
+	pointer = txn.meta.getFrontierPointer() // TODO: reuse free space
 
 	txn.saveList[pointer] = make([]byte, length)
 
@@ -139,7 +146,7 @@ func (txn medium) Save(data []byte) (pointer int) {
 }
 
 func (txn medium) Free(offset, length int) {
-	delete(txn.saveList, offset)
+	// delete(txn.saveList, offset) // FIXME
 
 	// TODO: make free space available for reuse
 

@@ -4,7 +4,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/voidDB/voidDB/tree"
+	"github.com/voidDB/voidDB/common"
+	"github.com/voidDB/voidDB/node"
 )
 
 type Void struct {
@@ -43,7 +44,7 @@ func NewVoid(path string, size int) (void *Void, e error) {
 	}
 
 	_, e = file.Write(
-		tree.NewNode(),
+		node.NewNode(),
 	)
 	if e != nil {
 		return
@@ -182,7 +183,7 @@ func (void *Void) write(data []byte, offset int) (e error) {
 	)
 
 	if offset+length > void.size {
-		return errorFull
+		return common.ErrorFull
 	}
 
 	_, e = void.file.WriteAt(data,
