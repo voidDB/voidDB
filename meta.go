@@ -32,9 +32,9 @@ func newMetaInit() (meta Meta) {
 
 	meta.setTimestamp()
 
-	meta.setRootNodePointer(pageSize)
+	meta.setRootNodePointer(2 * pageSize)
 
-	meta.setFrontierPointer(2 * pageSize)
+	meta.setFrontierPointer(3 * pageSize)
 
 	return
 }
@@ -158,10 +158,70 @@ func (meta Meta) getFrontierPointer() int {
 	)
 }
 
-func (meta Meta) setFrontierPointer(size int) {
+func (meta Meta) setFrontierPointer(pointer int) {
 	common.PutInt(
 		meta.frontierPointer(),
-		size,
+		pointer,
+	)
+
+	return
+}
+
+func (meta Meta) freeListHeadPtr(size int) []byte {
+	return common.Field(meta, 6*wordSize, wordSize)
+	// TODO: vary return value depending on size
+}
+
+func (meta Meta) getFreeListHeadPtr(size int) int {
+	return common.GetInt(
+		meta.freeListHeadPtr(size),
+	)
+}
+
+func (meta Meta) setFreeListHeadPtr(size, pointer int) {
+	common.PutInt(
+		meta.freeListHeadPtr(size),
+		pointer,
+	)
+
+	return
+}
+
+func (meta Meta) freeListNextIdx(size int) []byte {
+	return common.Field(meta, 7*wordSize, wordSize)
+	// TODO: vary return value depending on size
+}
+
+func (meta Meta) getFreeListNextIdx(size int) int {
+	return common.GetInt(
+		meta.freeListNextIdx(size),
+	)
+}
+
+func (meta Meta) setFreeListNextIdx(size, pointer int) {
+	common.PutInt(
+		meta.freeListNextIdx(size),
+		pointer,
+	)
+
+	return
+}
+
+func (meta Meta) freeListTailPtr(size int) []byte {
+	return common.Field(meta, 8*wordSize, wordSize)
+	// TODO: vary return value depending on size
+}
+
+func (meta Meta) getFreeListTailPtr(size int) int {
+	return common.GetInt(
+		meta.freeListTailPtr(size),
+	)
+}
+
+func (meta Meta) setFreeListTailPtr(size, pointer int) {
+	common.PutInt(
+		meta.freeListTailPtr(size),
+		pointer,
 	)
 
 	return

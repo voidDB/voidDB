@@ -44,6 +44,13 @@ func NewVoid(path string, size int) (void *Void, e error) {
 	}
 
 	_, e = file.Write(
+		newMetaInit(),
+	)
+	if e != nil {
+		return
+	}
+
+	_, e = file.Write(
 		node.NewNode(),
 	)
 	if e != nil {

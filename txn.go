@@ -3,6 +3,7 @@ package voidDB
 import (
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/cursor"
+	"github.com/voidDB/voidDB/free"
 )
 
 type Txn struct {
@@ -12,7 +13,8 @@ type Txn struct {
 
 	meta     Meta
 	saveList map[int][]byte
-	freeList map[int]int
+	freeList map[int][]int
+	freeze   bool
 
 	*cursor.Cursor
 }
@@ -31,8 +33,31 @@ func (txn *Txn) Abort() (e error) {
 func (txn *Txn) Commit() (e error) {
 	var (
 		data   []byte
+		head   int
 		offset int
+		size   int
+		tail   int
 	)
+
+	txn.freeze = true
+
+	for size = range txn.freeList {
+		head, tail = free.Put(medium{txn},
+			txn.meta.getFreeListTailPtr(size),
+			txn.meta.getSerialNumber(),
+			txn.freeList[size],
+		)
+
+		if txn.meta.getFreeListHeadPtr(size) == 0 {
+			txn.meta.setFreeListHeadPtr(size, head)
+		}
+
+		txn.meta.setFreeListTailPtr(size, tail)
+
+		for _, offset = range txn.freeList[size] {
+			delete(txn.saveList, offset)
+		}
+	}
 
 	for offset, data = range txn.saveList {
 		e = txn.write(data, offset)
@@ -54,6 +79,7 @@ func newTxn(read readFunc, write writeFunc) (txn *Txn, e error) {
 		read:     read,
 		write:    write,
 		saveList: make(map[int][]byte),
+		freeList: make(map[int][]int),
 	}
 
 	e = txn.getMeta()
@@ -130,25 +156,61 @@ func (txn medium) Save(data []byte) (pointer int) {
 		length int = pageAlign(
 			len(data),
 		)
+
+		e error
 	)
 
-	pointer = txn.meta.getFrontierPointer() // TODO: reuse free space
+	pointer, e = txn.getFreePagePointer(length)
+	if e != nil {
+		pointer = txn.meta.getFrontierPointer()
+
+		txn.meta.setFrontierPointer(pointer + length)
+	}
 
 	txn.saveList[pointer] = make([]byte, length)
 
 	copy(txn.saveList[pointer], data)
 
-	txn.meta.setRootNodePointer(pointer)
+	if !txn.freeze {
+		txn.meta.setRootNodePointer(pointer)
+	}
 
-	txn.meta.setFrontierPointer(pointer + length) // TODO: reuse free space
+	return
+}
+
+func (txn medium) SaveAt(offset int, data []byte) {
+	txn.saveList[offset] = data
 
 	return
 }
 
 func (txn medium) Free(offset, length int) {
-	// delete(txn.saveList, offset) // FIXME
+	length = pageAlign(length) // FIXME
 
-	// TODO: make free space available for reuse
+	txn.freeList[length] = append(txn.freeList[length], offset)
+
+	return
+}
+
+func (txn medium) getFreePagePointer(size int) (pointer int, e error) {
+	var (
+		nextOffset int
+		nextIndex  int
+	)
+
+	pointer, nextOffset, nextIndex, e = free.Get(txn,
+		txn.meta.getFreeListHeadPtr(size),
+		txn.meta.getFreeListNextIdx(size),
+	)
+	if e != nil {
+		return
+	}
+
+	// TODO: check reader table!
+
+	txn.meta.setFreeListHeadPtr(size, nextOffset)
+
+	txn.meta.setFreeListNextIdx(size, nextIndex)
 
 	return
 }
