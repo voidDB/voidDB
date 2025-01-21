@@ -9,6 +9,7 @@ import (
 
 const (
 	pageSize = common.PageSize
+	lineSize = common.LineSize
 	wordSize = common.WordSize
 
 	metaMagic = "voidMETA"
@@ -167,60 +168,66 @@ func (meta Meta) setFrontierPointer(pointer int) {
 	return
 }
 
-func (meta Meta) freeListHeadPtr(size int) []byte {
-	return common.Field(meta, 6*wordSize, wordSize)
-	// TODO: vary return value depending on size
-}
-
-func (meta Meta) getFreeListHeadPtr(size int) int {
-	return common.GetInt(
-		meta.freeListHeadPtr(size),
+func (meta Meta) freeQueue(size int) freeQueue {
+	return common.Field(meta,
+		pageSize/2+lineSize*(log(size)-1),
+		lineSize,
 	)
 }
 
-func (meta Meta) setFreeListHeadPtr(size, pointer int) {
+type freeQueue []byte
+
+func (queue freeQueue) headPointer() []byte {
+	return common.Field(queue, 0, wordSize)
+}
+
+func (queue freeQueue) getHeadPointer() int {
+	return common.GetInt(
+		queue.headPointer(),
+	)
+}
+
+func (queue freeQueue) setHeadPointer(pointer int) {
 	common.PutInt(
-		meta.freeListHeadPtr(size),
+		queue.headPointer(),
 		pointer,
 	)
 
 	return
 }
 
-func (meta Meta) freeListNextIdx(size int) []byte {
-	return common.Field(meta, 7*wordSize, wordSize)
-	// TODO: vary return value depending on size
+func (queue freeQueue) nextIndex() []byte {
+	return common.Field(queue, wordSize, wordSize)
 }
 
-func (meta Meta) getFreeListNextIdx(size int) int {
+func (queue freeQueue) getNextIndex() int {
 	return common.GetInt(
-		meta.freeListNextIdx(size),
+		queue.nextIndex(),
 	)
 }
 
-func (meta Meta) setFreeListNextIdx(size, pointer int) {
+func (queue freeQueue) setNextIndex(pointer int) {
 	common.PutInt(
-		meta.freeListNextIdx(size),
+		queue.nextIndex(),
 		pointer,
 	)
 
 	return
 }
 
-func (meta Meta) freeListTailPtr(size int) []byte {
-	return common.Field(meta, 8*wordSize, wordSize)
-	// TODO: vary return value depending on size
+func (queue freeQueue) tailPointer() []byte {
+	return common.Field(queue, 2*wordSize, wordSize)
 }
 
-func (meta Meta) getFreeListTailPtr(size int) int {
+func (queue freeQueue) getTailPointer() int {
 	return common.GetInt(
-		meta.freeListTailPtr(size),
+		queue.tailPointer(),
 	)
 }
 
-func (meta Meta) setFreeListTailPtr(size, pointer int) {
+func (queue freeQueue) setTailPointer(pointer int) {
 	common.PutInt(
-		meta.freeListTailPtr(size),
+		queue.tailPointer(),
 		pointer,
 	)
 

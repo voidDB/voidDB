@@ -10,12 +10,24 @@ import (
 )
 
 func AddStepNewVoid(sc *godog.ScenarioContext) {
-	sc.Given(`^there is a new Void "([^"]*)" of size (\d+)$`, newVoid)
+	sc.Given(`^there is a new Void "([^"]*)"$`, newVoidDefault)
+
+	sc.Given(`^there is a new Void "([^"]*)" of capacity (\d+)$`, newVoid)
 
 	return
 }
 
-func newVoid(ctx0 context.Context, name string, size int) (
+func newVoidDefault(ctx context.Context, name string) (
+	context.Context, error,
+) {
+	const (
+		capacity = 1 << 20 // 1 MiB
+	)
+
+	return newVoid(ctx, name, capacity)
+}
+
+func newVoid(ctx0 context.Context, name string, capacity int) (
 	ctx context.Context, e error,
 ) {
 	ctx = ctx0
@@ -29,7 +41,7 @@ func newVoid(ctx0 context.Context, name string, size int) (
 		)
 	)
 
-	void, e = voidDB.NewVoid(path, size)
+	void, e = voidDB.NewVoid(path, capacity)
 	if e != nil {
 		return
 	}

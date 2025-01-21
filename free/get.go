@@ -5,7 +5,7 @@ import (
 )
 
 func Get(medium Medium, offset, index int) (
-	pointer, nextOffset, nextIndex int, e error,
+	txnID, pointer, nextOffset, nextIndex int, e error,
 ) {
 	var (
 		free Free = medium.Load(offset, pageSize)
@@ -23,19 +23,13 @@ func Get(medium Medium, offset, index int) (
 		return
 
 	case index+1 == free.getLength():
-		medium.Free(offset, pageSize)
-
-		nextOffset = free.getNextPointer()
-
-		nextIndex = 0
+		nextOffset, nextIndex = free.getNextPointer(), 0
 
 	default:
-		nextOffset = offset
-
-		nextIndex = index + 1
+		nextOffset, nextIndex = offset, index+1
 	}
 
-	pointer = free.getPagePointer(index)
+	txnID, pointer = free.getTxnID(), free.getPagePointer(index)
 
 	return
 }

@@ -1,11 +1,11 @@
 Feature: Void
   Scenario: Get non-existent record
-    Given there is a new Void "void" of size 1048576
+    Given there is a new Void "void"
     When I begin a read-only transaction "txn" in "void"
     Then getting "key" from "txn" should not find
 
   Scenario: Put and get record
-    Given there is a new Void "void" of size 1048576
+    Given there is a new Void "void"
     When I begin a transaction "txn0" in "void"
     When I put "key", "value" in "txn0"
     Then I should get "key", "value" from "txn0"
@@ -21,7 +21,7 @@ Feature: Void
     Then I should get "key", "VALUE" from "txn3"
 
   Scenario: Put record but abort transaction, then get
-    Given there is a new Void "void" of size 1048576
+    Given there is a new Void "void"
     When I begin a transaction "txn0" in "void"
     When I put "key", "value" in "txn0"
     Then I should get "key", "value" from "txn0"
@@ -30,7 +30,7 @@ Feature: Void
     Then getting "key" from "txn1" should not find
 
   Scenario: Delete and get record
-    Given there is a new Void "void" of size 1048576
+    Given there is a new Void "void"
     When I begin a transaction "txn0" in "void"
     When I put "key", "value" in "txn0"
     When I commit "txn0"
@@ -45,7 +45,7 @@ Feature: Void
     Then getting "key" from "txn3" should not find
 
   Scenario: Delete record but abort transaction, then get
-    Given there is a new Void "void" of size 1048576
+    Given there is a new Void "void"
     When I begin a transaction "txn0" in "void"
     When I put "key", "value" in "txn0"
     When I commit "txn0"
@@ -55,3 +55,67 @@ Feature: Void
     When I abort "txn1"
     When I begin a read-only transaction "txn2" in "void"
     Then I should get "key", "value" from "txn2"
+
+  Scenario: Put key-value records and then get individually
+    Given there is a new Void "void"
+    When I begin a transaction "txn" in "void"
+    When I put "key09", "value09" in "txn"
+    When I put "key19", "value19" in "txn"
+    When I put "key10", "value10" in "txn"
+    When I put "key04", "value04" in "txn"
+    When I put "key21", "value21" in "txn"
+    When I commit "txn"
+    When I begin a transaction "txn" in "void"
+    When I put "key22", "value22" in "txn"
+    When I put "key18", "value18" in "txn"
+    When I put "key05", "value05" in "txn"
+    When I put "key23", "value23" in "txn"
+    When I put "key17", "value17" in "txn"
+    When I commit "txn"
+    When I begin a transaction "txn" in "void"
+    When I put "key07", "value07" in "txn"
+    When I put "key13", "value13" in "txn"
+    When I put "key24", "value24" in "txn"
+    When I put "key01", "value01" in "txn"
+    When I put "key03", "value03" in "txn"
+    When I commit "txn"
+    When I begin a transaction "txn" in "void"
+    When I put "key15", "value15" in "txn"
+    When I put "key08", "value08" in "txn"
+    When I put "key11", "value11" in "txn"
+    When I put "key20", "value20" in "txn"
+    When I put "key02", "value02" in "txn"
+    When I commit "txn"
+    When I begin a transaction "txn" in "void"
+    When I put "key12", "value12" in "txn"
+    When I put "key14", "value14" in "txn"
+    When I put "key16", "value16" in "txn"
+    When I put "key00", "value00" in "txn"
+    When I put "key06", "value06" in "txn"
+    When I commit "txn"
+    When I begin a transaction "txn" in "void"
+    Then I should get "key00", "value00" from "txn"
+    Then I should get "key01", "value01" from "txn"
+    Then I should get "key02", "value02" from "txn"
+    Then I should get "key03", "value03" from "txn"
+    Then I should get "key04", "value04" from "txn"
+    Then I should get "key05", "value05" from "txn"
+    Then I should get "key06", "value06" from "txn"
+    Then I should get "key07", "value07" from "txn"
+    Then I should get "key08", "value08" from "txn"
+    Then I should get "key09", "value09" from "txn"
+    Then I should get "key10", "value10" from "txn"
+    Then I should get "key11", "value11" from "txn"
+    Then I should get "key12", "value12" from "txn"
+    Then I should get "key13", "value13" from "txn"
+    Then I should get "key14", "value14" from "txn"
+    Then I should get "key15", "value15" from "txn"
+    Then I should get "key16", "value16" from "txn"
+    Then I should get "key17", "value17" from "txn"
+    Then I should get "key18", "value18" from "txn"
+    Then I should get "key19", "value19" from "txn"
+    Then I should get "key20", "value20" from "txn"
+    Then I should get "key21", "value21" from "txn"
+    Then I should get "key22", "value22" from "txn"
+    Then I should get "key23", "value23" from "txn"
+    Then I should get "key24", "value24" from "txn"

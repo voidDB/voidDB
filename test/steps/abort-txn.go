@@ -28,7 +28,5 @@ func abortTxn(ctx0 context.Context, name string) (
 		return
 	}
 
-	ctx = context.WithValue(ctx, ctxKeyTxn{name}, txn)
-
 	return
 }

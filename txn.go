@@ -1,15 +1,22 @@
 package voidDB
 
 import (
+	"os"
+
+	"golang.org/x/sys/unix"
+
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/cursor"
 	"github.com/voidDB/voidDB/free"
+	"github.com/voidDB/voidDB/reader"
 )
 
 type Txn struct {
+	lockfile *os.File
+	readers  *reader.ReaderTable
+
 	read  readFunc
 	write writeFunc
-	quit  func() error
 
 	meta     Meta
 	saveList map[int][]byte
@@ -20,12 +27,19 @@ type Txn struct {
 }
 
 func (txn *Txn) Abort() (e error) {
-	e = txn.quit()
+	e = txn.readers.Close()
 	if e != nil {
 		return
 	}
 
-	txn = nil
+	if txn.lockfile == nil {
+		return
+	}
+
+	e = txn.lockfile.Close()
+	if e != nil {
+		return
+	}
 
 	return
 }
@@ -33,31 +47,12 @@ func (txn *Txn) Abort() (e error) {
 func (txn *Txn) Commit() (e error) {
 	var (
 		data   []byte
-		head   int
 		offset int
-		size   int
-		tail   int
 	)
 
 	txn.freeze = true
 
-	for size = range txn.freeList {
-		head, tail = free.Put(medium{txn},
-			txn.meta.getFreeListTailPtr(size),
-			txn.meta.getSerialNumber(),
-			txn.freeList[size],
-		)
-
-		if txn.meta.getFreeListHeadPtr(size) == 0 {
-			txn.meta.setFreeListHeadPtr(size, head)
-		}
-
-		txn.meta.setFreeListTailPtr(size, tail)
-
-		for _, offset = range txn.freeList[size] {
-			delete(txn.saveList, offset)
-		}
-	}
+	txn.enqueueFreeList()
 
 	for offset, data = range txn.saveList {
 		e = txn.write(data, offset)
@@ -74,12 +69,10 @@ func (txn *Txn) Commit() (e error) {
 	return txn.Abort()
 }
 
-func newTxn(read readFunc, write writeFunc) (txn *Txn, e error) {
+func newTxn(path string, read readFunc, write writeFunc) (txn *Txn, e error) {
 	txn = &Txn{
-		read:     read,
-		write:    write,
-		saveList: make(map[int][]byte),
-		freeList: make(map[int][]int),
+		read:  read,
+		write: write,
 	}
 
 	e = txn.getMeta()
@@ -92,6 +85,41 @@ func newTxn(read readFunc, write writeFunc) (txn *Txn, e error) {
 	txn.meta.setSerialNumber(
 		txn.meta.getSerialNumber() + 1,
 	)
+
+	txn.readers, e = reader.OpenReaderTable(path)
+	if e != nil {
+		return
+	}
+
+	switch {
+	case write == nil:
+		txn.write = func([]byte, int) error { return unix.EACCES }
+
+		e = txn.readers.AcquireSlot(
+			txn.meta.getSerialNumber(),
+		)
+		if e != nil {
+			return
+		}
+
+	default:
+		txn.lockfile, e = os.OpenFile(path, os.O_RDONLY, 0)
+		if e != nil {
+			return
+		}
+
+		e = unix.Flock(
+			int(txn.lockfile.Fd()),
+			unix.LOCK_EX|unix.LOCK_NB,
+		)
+		if e != nil {
+			return
+		}
+
+		txn.saveList = make(map[int][]byte)
+
+		txn.freeList = make(map[int][]int)
+	}
 
 	txn.Cursor = cursor.NewCursor(medium{txn},
 		txn.meta.getRootNodePointer(),
@@ -133,84 +161,37 @@ func (txn *Txn) putMeta() error {
 	)
 }
 
-type medium struct {
-	*Txn
-}
-
-func (txn medium) Load(offset, length int) (data []byte) {
+func (txn *Txn) enqueueFreeList() {
 	var (
-		cached bool
+		queue freeQueue
+
+		head   int
+		offset int
+		size   int
+		tail   int
 	)
 
-	data, cached = txn.saveList[offset]
+	for size = range txn.freeList {
+		queue = txn.meta.freeQueue(size)
 
-	if cached {
-		return data[:length]
-	}
-
-	return txn.read(offset, length)
-}
-
-func (txn medium) Save(data []byte) (pointer int) {
-	var (
-		length int = pageAlign(
-			len(data),
+		head, tail = free.Put(medium{txn},
+			queue.getTailPointer(),
+			txn.meta.getSerialNumber(),
+			txn.freeList[size],
 		)
 
-		e error
-	)
+		if queue.getHeadPointer() == 0 {
+			queue.setHeadPointer(head)
+		}
 
-	pointer, e = txn.getFreePagePointer(length)
-	if e != nil {
-		pointer = txn.meta.getFrontierPointer()
+		queue.setTailPointer(tail)
 
-		txn.meta.setFrontierPointer(pointer + length)
+		for _, offset = range txn.freeList[size] {
+			delete(txn.saveList, offset)
+		}
+
+		delete(txn.freeList, size)
 	}
-
-	txn.saveList[pointer] = make([]byte, length)
-
-	copy(txn.saveList[pointer], data)
-
-	if !txn.freeze {
-		txn.meta.setRootNodePointer(pointer)
-	}
-
-	return
-}
-
-func (txn medium) SaveAt(offset int, data []byte) {
-	txn.saveList[offset] = data
-
-	return
-}
-
-func (txn medium) Free(offset, length int) {
-	length = pageAlign(length) // FIXME
-
-	txn.freeList[length] = append(txn.freeList[length], offset)
-
-	return
-}
-
-func (txn medium) getFreePagePointer(size int) (pointer int, e error) {
-	var (
-		nextOffset int
-		nextIndex  int
-	)
-
-	pointer, nextOffset, nextIndex, e = free.Get(txn,
-		txn.meta.getFreeListHeadPtr(size),
-		txn.meta.getFreeListNextIdx(size),
-	)
-	if e != nil {
-		return
-	}
-
-	// TODO: check reader table!
-
-	txn.meta.setFreeListHeadPtr(size, nextOffset)
-
-	txn.meta.setFreeListNextIdx(size, nextIndex)
 
 	return
 }

@@ -2,24 +2,23 @@ package voidDB
 
 import (
 	"os"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/node"
+	"github.com/voidDB/voidDB/reader"
 )
 
 type Void struct {
-	mmap []byte
 	file *os.File
-	size int
+	mmap []byte
 }
 
-func NewVoid(path string, size int) (void *Void, e error) {
+func NewVoid(path string, capacity int) (void *Void, e error) {
 	var (
 		file *os.File
 	)
-
-	size = pageAlign(size)
 
 	file, e = os.Create(path)
 	if e != nil {
@@ -27,14 +26,6 @@ func NewVoid(path string, size int) (void *Void, e error) {
 	}
 
 	defer file.Close()
-
-	e = syscall.Ftruncate(
-		int(file.Fd()),
-		int64(size),
-	)
-	if e != nil {
-		return
-	}
 
 	_, e = file.Write(
 		newMetaInit(),
@@ -57,10 +48,15 @@ func NewVoid(path string, size int) (void *Void, e error) {
 		return
 	}
 
-	return OpenVoid(file.Name())
+	e = reader.NewReaderTable(path)
+	if e != nil {
+		return
+	}
+
+	return OpenVoid(path, capacity)
 }
 
-func OpenVoid(path string) (void *Void, e error) {
+func OpenVoid(path string, capacity int) (void *Void, e error) {
 	var (
 		stat os.FileInfo
 	)
@@ -77,14 +73,16 @@ func OpenVoid(path string) (void *Void, e error) {
 		return
 	}
 
-	void.size = int(stat.Size())
+	if int(stat.Size()) > capacity {
+		capacity = int(stat.Size())
+	}
 
-	void.mmap, e = syscall.Mmap(
+	void.mmap, e = unix.Mmap(
 		int(void.file.Fd()),
 		0,
-		void.size,
-		syscall.PROT_READ,
-		syscall.MAP_PRIVATE,
+		capacity,
+		unix.PROT_READ,
+		unix.MAP_PRIVATE,
 	)
 	if e != nil {
 		return
@@ -94,23 +92,22 @@ func OpenVoid(path string) (void *Void, e error) {
 }
 
 func (void *Void) BeginTxn(readonly bool) (txn *Txn, e error) {
-	txn, e = newTxn(void.read, void.writeWhenReadonly)
+	var (
+		write writeFunc
+	)
+
+	if !readonly {
+		write = void.write
+	}
+
+	txn, e = newTxn(
+		void.file.Name(),
+		void.read,
+		write,
+	)
 	if e != nil {
 		return
 	}
-
-	if readonly {
-		return
-	}
-
-	e = void.lock()
-	if e != nil {
-		return
-	}
-
-	txn.write = void.write
-
-	txn.quit = void.unlock
 
 	return
 }
@@ -121,61 +118,12 @@ func (void *Void) Close() (e error) {
 		return
 	}
 
-	e = syscall.Munmap(void.mmap)
+	e = unix.Munmap(void.mmap)
 	if e != nil {
 		return
 	}
 
 	return
-}
-
-func Extend(path string, toSize int) (e error) {
-	var (
-		file *os.File
-		stat os.FileInfo
-	)
-
-	toSize = pageAlign(toSize)
-
-	file, e = os.Open(path)
-	if e != nil {
-		return
-	}
-
-	defer file.Close()
-
-	stat, e = file.Stat()
-	if e != nil {
-		return
-	}
-
-	if stat.Size() > int64(toSize) {
-		return
-	}
-
-	e = syscall.Ftruncate(
-		int(file.Fd()),
-		int64(toSize),
-	)
-	if e != nil {
-		return
-	}
-
-	return
-}
-
-func (void *Void) lock() error {
-	return syscall.Flock(
-		int(void.file.Fd()),
-		syscall.LOCK_EX|syscall.LOCK_NB,
-	)
-}
-
-func (void *Void) unlock() error {
-	return syscall.Flock(
-		int(void.file.Fd()),
-		syscall.LOCK_UN,
-	)
 }
 
 func (void *Void) read(offset, length int) []byte {
@@ -183,16 +131,6 @@ func (void *Void) read(offset, length int) []byte {
 }
 
 func (void *Void) write(data []byte, offset int) (e error) {
-	var (
-		length int = pageAlign(
-			len(data),
-		)
-	)
-
-	if offset+length > void.size {
-		return common.ErrorFull
-	}
-
 	_, e = void.file.WriteAt(data,
 		int64(offset),
 	)
@@ -200,17 +138,21 @@ func (void *Void) write(data []byte, offset int) (e error) {
 		return
 	}
 
+	if offset+len(data) > cap(void.mmap) {
+		return common.ErrorFull
+	}
+
 	return
 }
 
-func (void *Void) writeWhenReadonly([]byte, int) error {
-	return syscall.EACCES
+func align(size int) int {
+	return 1 << log(size)
 }
 
-func pageAlign(size int) int {
-	if size%pageSize > 0 {
-		return size + pageSize - size%pageSize
+func log(size int) (exp int) {
+	for exp = 12; 1<<exp < size; exp++ {
+		continue
 	}
 
-	return size
+	return
 }

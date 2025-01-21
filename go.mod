@@ -5,6 +5,7 @@ go 1.22.3
 require (
 	github.com/cucumber/godog v0.14.1
 	github.com/stretchr/testify v1.8.2
+	golang.org/x/sys v0.29.0
 )
 
 require (
