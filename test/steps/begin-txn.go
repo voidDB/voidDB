@@ -43,7 +43,7 @@ func beginTxn(ctx0 context.Context, txnName, voidName string, readonly bool) (
 		txn *voidDB.Txn
 	)
 
-	txn, e = void.BeginTxn(readonly)
+	txn, e = void.BeginTxn(readonly, false)
 	if e != nil {
 		return
 	}
