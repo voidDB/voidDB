@@ -17,6 +17,7 @@ type Txn struct {
 
 	read  readFunc
 	write writeFunc
+	sync  syncFunc
 
 	meta     Meta
 	saveList map[int][]byte
@@ -26,6 +27,12 @@ type Txn struct {
 	*cursor.Cursor
 }
 
+// Abort discards all changes made in a transaction, and ends its moratorium on
+// recycling of pages it might have needed to refer. For this reason,
+// applications should not be slow to abort transactions that have outlived
+// their useful lives and are preventing effective resource utilisation.
+// Following an invocation of Abort, the transaction handle must no longer be
+// used.
 func (txn *Txn) Abort() (e error) {
 	e = txn.readers.Close()
 	if e != nil {
@@ -33,7 +40,7 @@ func (txn *Txn) Abort() (e error) {
 	}
 
 	if txn.lockfile == nil {
-		return
+		goto end
 	}
 
 	e = txn.lockfile.Close()
@@ -41,9 +48,19 @@ func (txn *Txn) Abort() (e error) {
 		return
 	}
 
+end:
+	*txn = Txn{}
+
 	return
 }
 
+// Commit persists all changes to data made in a transaction. Database state is
+// not really updated until Commit has been invoked. If it returns a nil error,
+// effects of the transaction would be perceived in subsequent transactions,
+// whereas pre-existing transactions will remain oblivious as intended. Whether
+// Commit waits on [*os.File.Sync] depends on the mustSync argument passed to
+// [*Void.BeginTxn]. The transaction handle is not safe to reuse after the
+// first invocation of Commit, regardless of the result.
 func (txn *Txn) Commit() (e error) {
 	var (
 		data   []byte
@@ -66,13 +83,25 @@ func (txn *Txn) Commit() (e error) {
 		return
 	}
 
+	if txn.sync != nil {
+		e = txn.sync()
+		if e != nil {
+			return
+		}
+	}
+
 	return txn.Abort()
 }
 
-func newTxn(path string, read readFunc, write writeFunc) (txn *Txn, e error) {
+func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
+	txn *Txn, e error,
+) {
 	txn = &Txn{
-		read:  read,
-		write: write,
+		read:     read,
+		write:    write,
+		sync:     sync,
+		saveList: make(map[int][]byte),
+		freeList: make(map[int][]int),
 	}
 
 	e = txn.getMeta()
@@ -93,7 +122,7 @@ func newTxn(path string, read readFunc, write writeFunc) (txn *Txn, e error) {
 
 	switch {
 	case write == nil:
-		txn.write = func([]byte, int) error { return unix.EACCES }
+		txn.write = denyPermission
 
 		e = txn.readers.AcquireSlot(
 			txn.meta.getSerialNumber(),
@@ -115,10 +144,6 @@ func newTxn(path string, read readFunc, write writeFunc) (txn *Txn, e error) {
 		if e != nil {
 			return
 		}
-
-		txn.saveList = make(map[int][]byte)
-
-		txn.freeList = make(map[int][]int)
 	}
 
 	txn.Cursor = cursor.NewCursor(medium{txn},
@@ -199,3 +224,11 @@ func (txn *Txn) enqueueFreeList() {
 type readFunc func(int, int) []byte
 
 type writeFunc func([]byte, int) error
+
+var (
+	denyPermission writeFunc = func([]byte, int) error {
+		return unix.EACCES
+	}
+)
+
+type syncFunc func() error

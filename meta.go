@@ -170,7 +170,7 @@ func (meta Meta) setFrontierPointer(pointer int) {
 
 func (meta Meta) freeQueue(size int) freeQueue {
 	return common.Field(meta,
-		pageSize/2+lineSize*(log(size)-1),
+		pageSize/2+lineSize*(logarithm(size)-1),
 		lineSize,
 	)
 }
