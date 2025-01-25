@@ -6,6 +6,8 @@ import (
 
 type medium struct {
 	*Txn
+
+	keyspace []byte
 }
 
 func (txn medium) Load(offset, length int) (data []byte) {
@@ -34,7 +36,7 @@ func (txn medium) Save(data []byte) (pointer int) {
 	txn.saveList[pointer] = data
 
 	if !txn.freeze {
-		txn.meta.setRootNodePointer(pointer)
+		txn.setRootNodePointer(txn.keyspace, pointer)
 	}
 
 	return

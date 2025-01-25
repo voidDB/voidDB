@@ -119,3 +119,17 @@ Feature: Void
     Then I should get "key22", "value22" from "txn"
     Then I should get "key23", "value23" from "txn"
     Then I should get "key24", "value24" from "txn"
+
+  Scenario: Put and get key-value records in different keyspaces
+    Given there is a new Void "void"
+    When I begin a transaction "txn0" in "void"
+    When I open a cursor "cursor0" associated with keyspace "upper" and "txn0"
+    When I open a cursor "cursor1" associated with keyspace "lower" and "txn0"
+    When I put "key", "VALUE" using "cursor0"
+    When I put "key", "value" using "cursor1"
+    When I commit "txn0"
+    When I begin a read-only transaction "txn1" in "void"
+    When I open a cursor "cursor0" associated with keyspace "upper" and "txn1"
+    When I open a cursor "cursor1" associated with keyspace "lower" and "txn1"
+    Then I should get "key", "VALUE" using "cursor0"
+    Then I should get "key", "value" using "cursor1"

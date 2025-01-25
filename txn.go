@@ -1,6 +1,7 @@
 package voidDB
 
 import (
+	"errors"
 	"os"
 
 	"golang.org/x/sys/unix"
@@ -8,9 +9,12 @@ import (
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/cursor"
 	"github.com/voidDB/voidDB/free"
+	"github.com/voidDB/voidDB/node"
 	"github.com/voidDB/voidDB/reader"
 )
 
+// A Txn is a transaction handle necessary for interacting with the database.
+// It can be obtained via [*Void.BeginTxn].
 type Txn struct {
 	lockfile *os.File
 	readers  *reader.ReaderTable
@@ -25,6 +29,57 @@ type Txn struct {
 	freeze   bool
 
 	*cursor.Cursor
+}
+
+// OpenCursor returns a handle on a cursor associated with the transaction and
+// a particular keyspace. Keyspaces allow multiple datasets with potentially
+// intersecting (overlapping) sets of keys to reside within the same database
+// without collision, provided that all keys are unique within their respective
+// keyspaces.
+//
+// The transaction handle already doubles as a cursor associated with the
+// default keyspace with all its accompaying methods. Hence, there is no need
+// to invoke OpenCursor unless multiple keyspaces are required, however the
+// embedded cursor handle could be obtained by passing nil as an argument
+// nonetheless.
+//
+// An application utilising keyspaces should avoid modifying records within the
+// default keyspace, as it is used to store pointers to all the other
+// keyspaces. There is virtually no limit on the number of keyspaces in a
+// database.
+func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
+	var (
+		pointer []byte
+	)
+
+	if keyspace == nil {
+		return txn.Cursor, nil
+	}
+
+	pointer, e = txn.Cursor.Get(keyspace)
+
+	switch {
+	case errors.Is(e, common.ErrorNotFound):
+		e = txn.setRootNodePointer(keyspace,
+			medium{txn, nil}.Save(
+				node.NewNode(),
+			),
+		)
+		if e != nil {
+			return
+		}
+
+		return txn.OpenCursor(keyspace)
+
+	case e != nil:
+		return
+	}
+
+	c = cursor.NewCursor(medium{txn, keyspace},
+		common.GetInt(pointer),
+	)
+
+	return
 }
 
 // Abort discards all changes made in a read-write transaction, and releases
@@ -147,9 +202,32 @@ func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 		}
 	}
 
-	txn.Cursor = cursor.NewCursor(medium{txn},
+	txn.Cursor = cursor.NewCursor(medium{txn, nil},
 		txn.meta.getRootNodePointer(),
 	)
+
+	return
+}
+
+func (txn *Txn) setRootNodePointer(keyspace []byte, pointer int) (e error) {
+	var (
+		value []byte
+	)
+
+	if keyspace == nil {
+		txn.meta.setRootNodePointer(pointer)
+
+		return
+	}
+
+	value = make([]byte, wordSize)
+
+	common.PutInt(value, pointer)
+
+	e = txn.Cursor.Put(keyspace, value)
+	if e != nil {
+		return
+	}
 
 	return
 }
@@ -200,7 +278,7 @@ func (txn *Txn) enqueueFreeList() {
 	for size = range txn.freeList {
 		queue = txn.meta.freeQueue(size)
 
-		head, tail = free.Put(medium{txn},
+		head, tail = free.Put(medium{txn, nil},
 			queue.getTailPointer(),
 			txn.meta.getSerialNumber(),
 			txn.freeList[size],

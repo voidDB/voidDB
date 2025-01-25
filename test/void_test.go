@@ -18,6 +18,7 @@ func TestVoid(t *testing.T) {
 
 			teststeps.AddStepNewVoid(sc)
 			teststeps.AddStepBeginTxn(sc)
+			teststeps.AddStepOpenCursor(sc)
 			teststeps.AddStepGet(sc)
 			teststeps.AddStepPut(sc)
 			teststeps.AddStepDel(sc)
