@@ -13,8 +13,8 @@ import (
 	"github.com/voidDB/voidDB/reader"
 )
 
-// A Txn is a transaction handle necessary for interacting with the database.
-// It can be obtained via [*Void.BeginTxn].
+// A Txn is a transaction handle necessary for interacting with a database. It
+// can be obtained via [*Void.BeginTxn].
 type Txn struct {
 	lockfile *os.File
 	readers  *reader.ReaderTable
@@ -224,12 +224,7 @@ func (txn *Txn) setRootNodePointer(keyspace []byte, pointer int) (e error) {
 
 	common.PutInt(value, pointer)
 
-	e = txn.Cursor.Put(keyspace, value)
-	if e != nil {
-		return
-	}
-
-	return
+	return txn.Cursor.Put(keyspace, value)
 }
 
 func (txn *Txn) getMeta() (e error) {

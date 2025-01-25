@@ -13,8 +13,7 @@
 // actively recycled.
 //
 // voidDB employs a copy-on-write strategy to maintain data in a multi-version
-// concurrency-controlled (MVCC) B+ tree structure hardened against data
-// corruption in the event of a partial write failure. It allows virtually any
+// concurrency-controlled (MVCC) B+ tree structure. It allows virtually any
 // number of concurrent readers, but only one active writer at any given
 // moment. Readers (and the sole writer) neither compete nor block one another,
 // even though they may originate from and operate within different threads and
