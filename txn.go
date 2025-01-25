@@ -23,7 +23,7 @@ type Txn struct {
 	write writeFunc
 	sync  syncFunc
 
-	meta     Meta
+	meta     voidMeta
 	saveList map[int][]byte
 	freeList map[int][]int
 	freeze   bool
@@ -234,8 +234,8 @@ func (txn *Txn) setRootNodePointer(keyspace []byte, pointer int) (e error) {
 
 func (txn *Txn) getMeta() (e error) {
 	var (
-		meta0 Meta = Meta(txn.read(0, pageSize))
-		meta1 Meta = Meta(txn.read(pageSize, pageSize))
+		meta0 voidMeta = txn.read(0, pageSize)
+		meta1 voidMeta = txn.read(pageSize, pageSize)
 	)
 
 	switch {

@@ -16,9 +16,9 @@ const (
 	version   = 0
 )
 
-type Meta []byte
+type voidMeta []byte
 
-func newMeta() (meta Meta) {
+func newMeta() (meta voidMeta) {
 	meta = make([]byte, pageSize)
 
 	meta.setMagic()
@@ -28,7 +28,7 @@ func newMeta() (meta Meta) {
 	return
 }
 
-func newMetaInit() (meta Meta) {
+func newMetaInit() (meta voidMeta) {
 	meta = newMeta()
 
 	meta.setTimestamp()
@@ -40,7 +40,7 @@ func newMetaInit() (meta Meta) {
 	return
 }
 
-func (meta Meta) makeCopy() (copi Meta) {
+func (meta voidMeta) makeCopy() (copi voidMeta) {
 	copi = make([]byte, pageSize)
 
 	copy(copi, meta)
@@ -48,11 +48,11 @@ func (meta Meta) makeCopy() (copi Meta) {
 	return
 }
 
-func (meta Meta) magic() []byte {
+func (meta voidMeta) magic() []byte {
 	return common.Field(meta, 0, wordSize)
 }
 
-func (meta Meta) setMagic() {
+func (meta voidMeta) setMagic() {
 	copy(
 		meta.magic(),
 		[]byte(metaMagic),
@@ -61,17 +61,17 @@ func (meta Meta) setMagic() {
 	return
 }
 
-func (meta Meta) version() []byte {
+func (meta voidMeta) version() []byte {
 	return common.Field(meta, wordSize, wordSize)
 }
 
-func (meta Meta) getVersion() int {
+func (meta voidMeta) getVersion() int {
 	return common.GetInt(
 		meta.version(),
 	)
 }
 
-func (meta Meta) setVersion() {
+func (meta voidMeta) setVersion() {
 	common.PutInt(
 		meta.version(),
 		version,
@@ -80,7 +80,7 @@ func (meta Meta) setVersion() {
 	return
 }
 
-func (meta Meta) isMeta() bool {
+func (meta voidMeta) isMeta() bool {
 	return bytes.Equal(
 		meta.magic(),
 		[]byte(metaMagic),
@@ -88,11 +88,11 @@ func (meta Meta) isMeta() bool {
 		meta.getVersion() == version
 }
 
-func (meta Meta) timestamp() []byte {
+func (meta voidMeta) timestamp() []byte {
 	return common.Field(meta, 2*wordSize, wordSize)
 }
 
-func (meta Meta) getTimestamp() time.Time {
+func (meta voidMeta) getTimestamp() time.Time {
 	return time.Unix(0,
 		int64(
 			common.GetInt(
@@ -102,7 +102,7 @@ func (meta Meta) getTimestamp() time.Time {
 	)
 }
 
-func (meta Meta) setTimestamp() {
+func (meta voidMeta) setTimestamp() {
 	common.PutInt(
 		meta.timestamp(),
 		int(time.Now().UnixNano()),
@@ -111,17 +111,17 @@ func (meta Meta) setTimestamp() {
 	return
 }
 
-func (meta Meta) serialNumber() []byte {
+func (meta voidMeta) serialNumber() []byte {
 	return common.Field(meta, 3*wordSize, wordSize)
 }
 
-func (meta Meta) getSerialNumber() int {
+func (meta voidMeta) getSerialNumber() int {
 	return common.GetInt(
 		meta.serialNumber(),
 	)
 }
 
-func (meta Meta) setSerialNumber(number int) {
+func (meta voidMeta) setSerialNumber(number int) {
 	common.PutInt(
 		meta.serialNumber(),
 		number,
@@ -130,17 +130,17 @@ func (meta Meta) setSerialNumber(number int) {
 	return
 }
 
-func (meta Meta) rootNodePointer() []byte {
+func (meta voidMeta) rootNodePointer() []byte {
 	return common.Field(meta, 4*wordSize, wordSize)
 }
 
-func (meta Meta) getRootNodePointer() int {
+func (meta voidMeta) getRootNodePointer() int {
 	return common.GetInt(
 		meta.rootNodePointer(),
 	)
 }
 
-func (meta Meta) setRootNodePointer(pointer int) {
+func (meta voidMeta) setRootNodePointer(pointer int) {
 	common.PutInt(
 		meta.rootNodePointer(),
 		pointer,
@@ -149,17 +149,17 @@ func (meta Meta) setRootNodePointer(pointer int) {
 	return
 }
 
-func (meta Meta) frontierPointer() []byte {
+func (meta voidMeta) frontierPointer() []byte {
 	return common.Field(meta, 5*wordSize, wordSize)
 }
 
-func (meta Meta) getFrontierPointer() int {
+func (meta voidMeta) getFrontierPointer() int {
 	return common.GetInt(
 		meta.frontierPointer(),
 	)
 }
 
-func (meta Meta) setFrontierPointer(pointer int) {
+func (meta voidMeta) setFrontierPointer(pointer int) {
 	common.PutInt(
 		meta.frontierPointer(),
 		pointer,
@@ -168,7 +168,7 @@ func (meta Meta) setFrontierPointer(pointer int) {
 	return
 }
 
-func (meta Meta) freeQueue(size int) freeQueue {
+func (meta voidMeta) freeQueue(size int) freeQueue {
 	return common.Field(meta,
 		pageSize/2+lineSize*(logarithm(size)-1),
 		lineSize,
