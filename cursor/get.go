@@ -5,18 +5,39 @@ import (
 	"github.com/voidDB/voidDB/node"
 )
 
+// Get retrieves the value corresponding to key and positions the cursor at the
+// record found.
+//
+// CAUTION: the value returned is immutable and valid only during the lifetime
+// of the transaction to which the cursor belongs, since the slice merely
+// reflects the relevant section of the memory map containing the value. Hence,
+// any attempt at mutating the slice at any time or accessing it after the
+// transaction has been committed/aborted will result in a fatal
+// [syscall.SIGSEGV]. (See also [runtime/debug.SetPanicOnFault].) Instead,
+// applications should allocate a slice of size equal to len(value) and copy
+// value into the new slice for modification/retention. This also applies to
+// [*Cursor.GetFirst], [*Cursor.GetLast], [*Cursor.GetNext], and
+// [*Cursor.GetPrev].
 func (cursor *Cursor) Get(key []byte) (value []byte, e error) {
 	cursor.reset()
 
 	return cursor.get(key)
 }
 
+// GetFirst retrieves and positions the cursor at the first key-value record,
+// sorted by key using [bytes.Compare].
+//
+// CAUTION: See [*Cursor.Get].
 func (cursor *Cursor) GetFirst() (key, value []byte, e error) {
 	cursor.reset()
 
 	return cursor.GetNext()
 }
 
+// GetLast retrieves and positions the cursor at the last key-value record,
+// sorted by key using [bytes.Compare].
+//
+// CAUTION: See [*Cursor.Get].
 func (cursor *Cursor) GetLast() (key, value []byte, e error) {
 	cursor.reset()
 

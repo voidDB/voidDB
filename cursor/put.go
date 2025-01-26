@@ -1,9 +1,21 @@
 package cursor
 
 import (
+	"math"
+	"syscall"
+
 	"github.com/voidDB/voidDB/node"
 )
 
+const (
+	MaxKeySize   = node.MaxKeySize
+	MaxValueSize = math.MaxUint32
+)
+
+// Put stores a key-value pair (or overwrites the corresponding value, if key
+// already exists) and positions the cursor at the inserted record. It returns
+// [syscall.EINVAL] (“invalid argument”) if the length of key or value is zero,
+// or otherwise exceeds [MaxKeySize] or [MaxValueSize] respectively.
 func (cursor *Cursor) Put(key, value []byte) (e error) {
 	var (
 		newRoot  node.Node
@@ -11,6 +23,20 @@ func (cursor *Cursor) Put(key, value []byte) (e error) {
 		pointer1 int
 		promoted []byte
 	)
+
+	switch {
+	case len(key) == 0:
+		fallthrough
+
+	case len(key) > MaxKeySize:
+		fallthrough
+
+	case len(value) == 0:
+		fallthrough
+
+	case len(value) > MaxValueSize:
+		return syscall.EINVAL
+	}
 
 	cursor.reset()
 

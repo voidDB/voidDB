@@ -12,8 +12,6 @@ func TestVoid(t *testing.T) {
 	var (
 		scenarioInitializer = func(sc *godog.ScenarioContext) {
 			teststeps.AddStepSetUp(sc)
-			teststeps.AddStepWriteZeroFile(sc)
-			teststeps.AddStepReadZeroFile(sc)
 			teststeps.AddStepTearDown(sc)
 
 			teststeps.AddStepNewVoid(sc)

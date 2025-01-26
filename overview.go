@@ -34,7 +34,7 @@
 // and a work of love. It is the “Twee!” of a bird; a tree falling in the
 // forest; yet another programmer pouring their drop into the proverbial [bit]
 // bucket. Above all, it is a shrine unto simple, readable, and functional
-// code; an assertion that the dichotomy between Zen aesthetics and practical
+// code; an assertion that the dichotomy between such aesthetics and practical
 // performance is mere illusion.
 //
 // Copyright 2024 Joel Ling.

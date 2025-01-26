@@ -13,8 +13,10 @@ import (
 	"github.com/voidDB/voidDB/reader"
 )
 
-// A Txn is a transaction handle necessary for interacting with a database. It
-// can be obtained via [*Void.BeginTxn].
+// A Txn is a transaction handle necessary for interacting with a database. A
+// transaction refers to a particular state of the database as at the beginning
+// of that transaction, so that the data appears to be frozen in time from
+// its perspective. See [*Void.BeginTxn].
 type Txn struct {
 	lockfile *os.File
 	readers  *reader.ReaderTable
@@ -38,7 +40,7 @@ type Txn struct {
 // keyspaces.
 //
 // The transaction handle already doubles as a cursor associated with the
-// default keyspace with all its accompaying methods. Hence, there is no need
+// default keyspace with all its accompanying methods. Hence, there is no need
 // to invoke OpenCursor unless multiple keyspaces are required, however the
 // embedded cursor handle could be obtained by passing nil as an argument
 // nonetheless.
@@ -84,11 +86,11 @@ func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 
 // Abort discards all changes made in a read-write transaction, and releases
 // the exclusive write lock. In the case of a read-only transaction, Abort ends
-// the moratorium on recycling of pages constituting its frozen-in-time view of
-// the database. For this reason, applications should not be slow to abort
-// transactions that have outlived their usefulness lest they prevent effective
-// resource utilisation. Following an invocation of Abort, the transaction
-// handle must no longer be used.
+// the moratorium on recycling of pages constituting its view of the dataset.
+// For this reason, applications should not be slow to abort transactions that
+// have outlived their usefulness lest they prevent effective resource
+// utilisation. Following an invocation of Abort, the transaction handle must
+// no longer be used.
 func (txn *Txn) Abort() (e error) {
 	e = txn.readers.Close()
 	if e != nil {

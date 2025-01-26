@@ -1,5 +1,9 @@
 package cursor
 
+// A Cursor enables storage, retrieval, destruction of, and bidirectional
+// iteration over key-value mappings in a keyspace via its methods. Out of the
+// box, it is not safe for concurrent use; an application intending to do so
+// should implement its own means of ensuring mutual exclusion.
 type Cursor struct {
 	medium Medium
 	offset int
@@ -8,6 +12,9 @@ type Cursor struct {
 	latest []byte
 }
 
+// NewCursor is a low-level constructor used by
+// [*github.com/voidDB/voidDB.Txn.OpenCursor] and
+// [*github.com/voidDB/voidDB.Void.BeginTxn].
 func NewCursor(medium Medium, offset int) *Cursor {
 	const (
 		maxStackDepth = 26 // = log4(2^64 / 4096)

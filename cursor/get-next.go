@@ -5,6 +5,10 @@ import (
 	"github.com/voidDB/voidDB/node"
 )
 
+// GetNext advances the cursor and retrieves the next key-value record, sorted
+// by key using [bytes.Compare].
+//
+// CAUTION: See [*Cursor.Get].
 func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 	cursor.resume()
 

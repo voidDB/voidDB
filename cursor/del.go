@@ -9,6 +9,8 @@ const (
 	// hence the least significant 11 bits are free to mean other things.
 )
 
+// Del deletes the key-value record indexed by the cursor. To delete a record
+// by key, position the cursor with [*Cursor.Get] beforehand.
 func (cursor *Cursor) Del() (e error) {
 	cursor.resume()
 
