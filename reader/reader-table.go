@@ -2,6 +2,7 @@ package reader
 
 import (
 	"io"
+	"math"
 	"os"
 
 	"golang.org/x/sys/unix"
@@ -111,7 +112,7 @@ func (table *ReaderTable) oldestTxn() (oldest int) {
 		return // conservative; assumes oldest reader bears transaction ID 0
 	}
 
-	oldest = 1<<63 - 1
+	oldest = math.MaxInt64
 
 	for index = 0; index < maxNReaders; index++ {
 		if table.slotOffset(index) >= size {

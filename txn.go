@@ -14,9 +14,9 @@ import (
 )
 
 // A Txn is a transaction handle necessary for interacting with a database. A
-// transaction refers to a particular state of the database as at the beginning
-// of that transaction, so that the data appears to be frozen in time from
-// its perspective. See [*Void.BeginTxn].
+// transaction is the sum of the state of the database as at the beginning of
+// that transaction and any changes made within it. See [*Void.BeginTxn] for
+// more information.
 type Txn struct {
 	lockfile *os.File
 	readers  *reader.ReaderTable
@@ -28,6 +28,7 @@ type Txn struct {
 	meta     voidMeta
 	saveList map[int][]byte
 	freeList map[int][]int
+	freeSafe map[int]struct{}
 	freeze   bool
 
 	*cursor.Cursor
@@ -39,16 +40,16 @@ type Txn struct {
 // without collision, provided that all keys are unique within their respective
 // keyspaces.
 //
+// CAUTION: An application utilising keyspaces should avoid modifying records
+// within the default keyspace, as it is used to store pointers to all the
+// other keyspaces. There is virtually no limit on the number of keyspaces in a
+// database.
+//
 // The transaction handle already doubles as a cursor associated with the
 // default keyspace with all its accompanying methods. Hence, there is no need
 // to invoke OpenCursor unless multiple keyspaces are required, however the
 // embedded cursor handle could be obtained by passing nil as an argument
 // nonetheless.
-//
-// An application utilising keyspaces should avoid modifying records within the
-// default keyspace, as it is used to store pointers to all the other
-// keyspaces. There is virtually no limit on the number of keyspaces in a
-// database.
 func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 	var (
 		pointer []byte
@@ -94,7 +95,7 @@ func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 func (txn *Txn) Abort() (e error) {
 	e = txn.readers.Close()
 	if e != nil {
-		return
+		goto end
 	}
 
 	if txn.lockfile == nil {
@@ -103,7 +104,7 @@ func (txn *Txn) Abort() (e error) {
 
 	e = txn.lockfile.Close()
 	if e != nil {
-		return
+		goto end
 	}
 
 end:
@@ -132,22 +133,23 @@ func (txn *Txn) Commit() (e error) {
 	for offset, data = range txn.saveList {
 		e = txn.write(data, offset)
 		if e != nil {
-			return
+			goto end
 		}
 	}
 
 	e = txn.putMeta()
 	if e != nil {
-		return
+		goto end
 	}
 
 	if txn.sync != nil {
 		e = txn.sync()
 		if e != nil {
-			return
+			goto end
 		}
 	}
 
+end:
 	return txn.Abort()
 }
 
@@ -160,6 +162,7 @@ func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 		sync:     sync,
 		saveList: make(map[int][]byte),
 		freeList: make(map[int][]int),
+		freeSafe: make(map[int]struct{}),
 	}
 
 	e = txn.getMeta()
@@ -266,16 +269,16 @@ func (txn *Txn) enqueueFreeList() {
 	var (
 		queue freeQueue
 
-		head   int
-		offset int
-		size   int
-		tail   int
+		head int
+		size int
+		tail int
 	)
 
 	for size = range txn.freeList {
 		queue = txn.meta.freeQueue(size)
 
-		head, tail = free.Put(medium{txn, nil},
+		head, tail = free.Put(
+			medium{txn, nil},
 			queue.getTailPointer(),
 			txn.meta.getSerialNumber(),
 			txn.freeList[size],
@@ -286,12 +289,6 @@ func (txn *Txn) enqueueFreeList() {
 		}
 
 		queue.setTailPointer(tail)
-
-		for _, offset = range txn.freeList[size] {
-			delete(txn.saveList, offset)
-		}
-
-		delete(txn.freeList, size)
 	}
 
 	return

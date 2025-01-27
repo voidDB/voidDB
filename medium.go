@@ -53,10 +53,29 @@ func (txn medium) Free(offset, length int) {
 
 	txn.freeList[length] = append(txn.freeList[length], offset)
 
+	delete(txn.saveList, offset)
+
 	return
 }
 
 func (txn medium) getFreePagePointer(size int) (pointer int) {
+	var (
+		available bool
+		pointers  []int
+	)
+
+	if pointers, available = txn.freeList[size]; available {
+		for _, pointer = range pointers {
+			txn.freeList[size] = txn.freeList[size][1:]
+
+			if _, available = txn.freeSafe[pointer]; available {
+				return
+			}
+
+			txn.freeList[size] = append(txn.freeList[size], pointer)
+		}
+	}
+
 	var (
 		e          error
 		nextIndex  int
@@ -93,6 +112,8 @@ func (txn medium) getFreePagePointer(size int) (pointer int) {
 	default:
 		queue.setNextIndex(nextIndex)
 	}
+
+	txn.freeSafe[pointer] = struct{}{}
 
 	return
 }

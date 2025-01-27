@@ -24,6 +24,10 @@ func (cursor *Cursor) getNext() (key, value []byte, e error) {
 		pointer int
 	)
 
+	if cursor.index >= node.MaxNodeLength {
+		goto end
+	}
+
 	curNode, e = getNode(cursor.medium, cursor.offset, false)
 	if e != nil {
 		return
@@ -52,8 +56,10 @@ func (cursor *Cursor) getNext() (key, value []byte, e error) {
 		cursor.offset, cursor.index = pointer, 0
 
 		return cursor.getNext()
+	}
 
-	case len(cursor.stack) > 0:
+end:
+	if len(cursor.stack) > 0 {
 		cursor.offset, cursor.index =
 			cursor.stack[len(cursor.stack)-1].offset,
 			cursor.stack[len(cursor.stack)-1].index+1

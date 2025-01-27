@@ -115,7 +115,7 @@ func OpenVoid(path string, capacity int) (void *Void, e error) {
 // and non-durable; otherwise it is a write transaction. Since there cannot be
 // more than one ongoing write transaction per database at any point in time,
 // the function may return [syscall.EAGAIN] or [syscall.EWOULDBLOCK] (same
-// error, ``resource temporarily unavailable'') if an uncommitted/unaborted
+// error, “resource temporarily unavailable”) if an uncommitted/unaborted
 // incumbent is present in any thread/process in the system.
 //
 // Setting mustSync to true ensures that all changes to data are flushed to

@@ -8,18 +8,16 @@ import (
 func getNode(medium Medium, offset int, free bool) (
 	n node.Node, e error,
 ) {
-	if free {
-		medium.Free(offset, common.PageSize)
-	}
-
-	n = node.Node(
-		medium.Load(offset, common.PageSize),
-	)
+	n = medium.Load(offset, common.PageSize)
 
 	if !n.IsNode() {
 		e = common.ErrorCorrupt
 
 		return
+	}
+
+	if free {
+		medium.Free(offset, common.PageSize)
 	}
 
 	return
