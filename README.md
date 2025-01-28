@@ -1,3 +1,14 @@
+# voidDB
+
+<a href="https://pkg.go.dev/github.com/voidDB/voidDB">
+  <img src="https://pkg.go.dev/badge/github.com/voidDB/voidDB.svg" />
+</a>
+<br>
+<div align="center">
+  <img src="https://github.com/voidDB.png" width="230" />
+</div>
+
+```txt
 goos: linux
 goarch: arm64
 pkg: github.com/voidDB/voidDB/test
@@ -17,3 +28,4 @@ BenchmarkBadgerPut-2       	  131072	     14799 ns/op
 BenchmarkBadgerGet-2       	  131072	     18448 ns/op
 BenchmarkBadgerGetNext-2   	  131072	      2202 ns/op
 BenchmarkNothing-2         	  131072	         0.3223 ns/op
+```
