@@ -26,7 +26,128 @@
 //
 // # Getting Started
 //
-// TODO.
+// To begin developing with voidDB, [Install Go] on your 64-bit Linux machine.
+//
+//	$ go version
+//	go version go1.22.3 linux/arm64
+//
+// Then, import voidDB in your Go application. The following would result in
+// the creation of a database file and its reader table in the working
+// directory. Set the database capacity to any reasonably large value to make
+// sufficient room for the data you intend to store, even if it exceeds the
+// total amount of physical memory; neither memory nor disk is immediately
+// consumed to capacity.
+//
+//	package main
+//
+//	import (
+//		"errors"
+//		"log"
+//		"os"
+//
+//		"github.com/voidDB/voidDB"
+//	)
+//
+//	func main() {
+//		const (
+//			capacity = 1 << 40 // 1 TiB
+//			path     = "void"
+//		)
+//
+//		void, err := voidDB.NewVoid(path, capacity)
+//
+//		if errors.Is(err, os.ErrExist) {
+//			void, err = voidDB.OpenVoid(path, capacity)
+//		}
+//
+//		if err != nil {
+//			panic(err)
+//		}
+//
+//		defer void.Close()
+//	}
+//
+// Begin a transaction to store and retrieve data. Make it read-only except
+// when modifying data: write transactions should be used sparingly because
+// only exactly one of them can be active at any time. Ensure all changes are
+// safely synced to disk with mustSync if even the slightest risk of losing
+// those changes is a concern. Commit or abort a transaction as soon as they
+// are done.
+//
+//	readonly, mustSync := false, true
+//
+//	txn, err := void.BeginTxn(readonly, mustSync)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+// Open a cursor if more than one keyspace is required. An application can map
+// different values to the same key so long as they reside in separate
+// keyspaces. The transaction handle acts as a cursor in the default keyspace
+// and is capable of all the cursor methods.
+//
+//	cur, err := txn.OpenCursor(
+//		[]byte("hello"),
+//	)
+//
+//	err = cur.Put(
+//		[]byte("greeting"),
+//		[]byte("Hello, World!"),
+//	)
+//
+//	cur, err = txn.OpenCursor(
+//		[]byte("goodbye"),
+//	)
+//
+//	err = cur.Put(
+//		[]byte("greeting"),
+//		[]byte("さようなら、世界。"),
+//	)
+//
+//	switch err {
+//	case nil:
+//		err = txn.Commit()
+//
+//	default:
+//		err = txn.Abort()
+//	}
+//
+//	readonly = true
+//
+//	txn, err = void.BeginTxn(readonly, mustSync)
+//
+//	cur, err = txn.OpenCursor(
+//		[]byte("hello"),
+//	)
+//
+//	val, err := cur.Get(
+//		[]byte("greeting"),
+//	)
+//
+//	log.Printf("%s", val)
+//
+//	cur, err = txn.OpenCursor(
+//		[]byte("goodbye"),
+//	)
+//
+//	val, err = cur.Get(
+//		[]byte("greeting"),
+//	)
+//
+//	log.Printf("%s", val)
+//
+// To iterate over a keyspace, use [*cursor.Cursor.GetNext]/GetPrev. Position
+// the cursor with [*cursor.Cursor.Get]/GetFirst/GetLast.
+//
+//	for {
+//		key, val, err := cur.GetNext()
+//
+//		if errors.Is(err, common.ErrorNotFound) {
+//			break
+//		}
+//
+//		log.Printf("%s -> %s", key, val)
+//	}
 //
 // # Author
 //
@@ -39,5 +160,6 @@
 //
 // Copyright 2024 Joel Ling.
 //
+// [Install Go]: https://go.dev/doc/install
 // [memory-mapped]: https://man7.org/linux/man-pages/man2/mmap.2.html
 package voidDB
