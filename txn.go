@@ -3,6 +3,7 @@ package voidDB
 import (
 	"errors"
 	"os"
+	"time"
 
 	"golang.org/x/sys/unix"
 
@@ -32,6 +33,18 @@ type Txn struct {
 	freeze   bool
 
 	*cursor.Cursor
+}
+
+// SerialNumber returns a serial number identifying a particular state of the
+// database as at the beginning of the transaction. All transactions beginning
+// from the same state share the same serial number.
+func (txn *Txn) SerialNumber() int {
+	return txn.meta.getSerialNumber()
+}
+
+// Timestamp returns the time as at the beginning of the transaction.
+func (txn *Txn) Timestamp() time.Time {
+	return txn.meta.getTimestamp()
 }
 
 // OpenCursor returns a handle on a cursor associated with the transaction and
@@ -93,22 +106,21 @@ func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 // utilisation. Following an invocation of Abort, the transaction handle must
 // no longer be used.
 func (txn *Txn) Abort() (e error) {
+	defer func() { *txn = Txn{} }()
+
 	e = txn.readers.Close()
 	if e != nil {
-		goto end
+		return
 	}
 
 	if txn.lockfile == nil {
-		goto end
+		return
 	}
 
 	e = txn.lockfile.Close()
 	if e != nil {
-		goto end
+		return
 	}
-
-end:
-	*txn = Txn{}
 
 	return
 }
@@ -124,7 +136,15 @@ func (txn *Txn) Commit() (e error) {
 	var (
 		data   []byte
 		offset int
+
+		abort = func() {
+			e = errors.Join(e,
+				txn.Abort(),
+			)
+		}
 	)
+
+	defer abort()
 
 	txn.freeze = true
 
@@ -133,24 +153,23 @@ func (txn *Txn) Commit() (e error) {
 	for offset, data = range txn.saveList {
 		e = txn.write(data, offset)
 		if e != nil {
-			goto end
+			return
 		}
 	}
 
 	e = txn.putMeta()
 	if e != nil {
-		goto end
+		return
 	}
 
 	if txn.sync != nil {
 		e = txn.sync()
 		if e != nil {
-			goto end
+			return
 		}
 	}
 
-end:
-	return txn.Abort()
+	return
 }
 
 func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (

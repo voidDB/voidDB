@@ -16,10 +16,49 @@ import (
 	"github.com/voidDB/voidDB"
 )
 
+const (
+	keySize = 511
+	valSize = 4096
+)
+
+var (
+	key [][]byte
+	val [][]byte
+)
+
+func populateKeyVal(n int) (e error) {
+	var (
+		i int
+	)
+
+	if len(key) >= n {
+		return
+	}
+
+	key = make([][]byte, n)
+	val = make([][]byte, n)
+
+	for i = 0; i < n; i++ {
+		key[i] = make([]byte, keySize)
+
+		_, e = rand.Read(key[i])
+		if e != nil {
+			return
+		}
+
+		val[i] = make([]byte, valSize)
+
+		_, e = rand.Read(val[i])
+		if e != nil {
+			return
+		}
+	}
+
+	return
+}
+
 func BenchmarkVoidPut(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		mapSize = 1 << 30 // 1 GiB
 	)
 
@@ -29,25 +68,11 @@ func BenchmarkVoidPut(b *testing.B) {
 		path string
 		txnW *voidDB.Txn
 		void *voidDB.Void
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	path, e = os.MkdirTemp("", "")
@@ -100,25 +125,11 @@ func BenchmarkVoidGet(b *testing.B) {
 		txnR *voidDB.Txn
 		txnW *voidDB.Txn
 		void *voidDB.Void
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	path, e = os.MkdirTemp("", "")
@@ -183,25 +194,11 @@ func BenchmarkVoidGetNext(b *testing.B) {
 		txnR *voidDB.Txn
 		txnW *voidDB.Txn
 		void *voidDB.Void
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	path, e = os.MkdirTemp("", "")
@@ -254,8 +251,6 @@ func BenchmarkVoidGetNext(b *testing.B) {
 
 func BenchmarkLMDBPut(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		mapSize = 1 << 31 // 2 GiB
 	)
 
@@ -265,9 +260,6 @@ func BenchmarkLMDBPut(b *testing.B) {
 		env *lmdb.Env
 		i   int
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *lmdb.Txn) (err error) {
 			dbi, err = txn.OpenRoot(0)
@@ -286,20 +278,9 @@ func BenchmarkLMDBPut(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	env, e = lmdb.NewEnv()
@@ -338,8 +319,6 @@ func BenchmarkLMDBPut(b *testing.B) {
 
 func BenchmarkLMDBGet(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		mapSize = 1 << 31 // 2 GiB
 	)
 
@@ -349,9 +328,6 @@ func BenchmarkLMDBGet(b *testing.B) {
 		env *lmdb.Env
 		i   int
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *lmdb.Txn) (err error) {
 			dbi, err = txn.OpenRoot(0)
@@ -388,20 +364,9 @@ func BenchmarkLMDBGet(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	env, e = lmdb.NewEnv()
@@ -445,8 +410,6 @@ func BenchmarkLMDBGet(b *testing.B) {
 
 func BenchmarkLMDBGetNext(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		mapSize = 1 << 31 // 2 GiB
 	)
 
@@ -457,9 +420,6 @@ func BenchmarkLMDBGetNext(b *testing.B) {
 		env *lmdb.Env
 		i   int
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *lmdb.Txn) (err error) {
 			dbi, err = txn.OpenRoot(0)
@@ -501,20 +461,9 @@ func BenchmarkLMDBGetNext(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	env, e = lmdb.NewEnv()
@@ -558,8 +507,6 @@ func BenchmarkLMDBGetNext(b *testing.B) {
 
 func BenchmarkBoltPut(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		bktName = "random"
 	)
 
@@ -569,9 +516,6 @@ func BenchmarkBoltPut(b *testing.B) {
 		e   error
 		i   int
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *bbolt.Tx) (err error) {
 			bkt, err = txn.CreateBucket(
@@ -592,20 +536,9 @@ func BenchmarkBoltPut(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")
@@ -634,8 +567,6 @@ func BenchmarkBoltPut(b *testing.B) {
 
 func BenchmarkBoltGet(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		bktName = "random"
 	)
 
@@ -645,9 +576,6 @@ func BenchmarkBoltGet(b *testing.B) {
 		e   error
 		i   int
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *bbolt.Tx) (err error) {
 			bkt, err = txn.CreateBucket(
@@ -683,20 +611,9 @@ func BenchmarkBoltGet(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")
@@ -734,8 +651,6 @@ func BenchmarkBoltGet(b *testing.B) {
 
 func BenchmarkBoltGetNext(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		bktName = "random"
 	)
 
@@ -746,9 +661,6 @@ func BenchmarkBoltGetNext(b *testing.B) {
 		e   error
 		i   int
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *bbolt.Tx) (err error) {
 			bkt, err = txn.CreateBucket(
@@ -788,20 +700,9 @@ func BenchmarkBoltGetNext(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")
@@ -838,36 +739,17 @@ func BenchmarkBoltGetNext(b *testing.B) {
 }
 
 func BenchmarkLevelPut(b *testing.B) {
-	const (
-		keySize = 511
-		valSize = 4096
-	)
-
 	var (
 		bat leveldb.Batch
 		e   error
 		i   int
 		ldb *leveldb.DB
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")
@@ -901,36 +783,17 @@ func BenchmarkLevelPut(b *testing.B) {
 }
 
 func BenchmarkLevelGet(b *testing.B) {
-	const (
-		keySize = 511
-		valSize = 4096
-	)
-
 	var (
 		bat leveldb.Batch
 		e   error
 		i   int
 		ldb *leveldb.DB
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")
@@ -969,11 +832,6 @@ func BenchmarkLevelGet(b *testing.B) {
 }
 
 func BenchmarkLevelGetNext(b *testing.B) {
-	const (
-		keySize = 511
-		valSize = 4096
-	)
-
 	var (
 		bat leveldb.Batch
 		e   error
@@ -981,25 +839,11 @@ func BenchmarkLevelGetNext(b *testing.B) {
 		itr iterator.Iterator
 		ldb *leveldb.DB
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")
@@ -1044,19 +888,11 @@ func BenchmarkLevelGetNext(b *testing.B) {
 }
 
 func BenchmarkBadgerPut(b *testing.B) {
-	const (
-		keySize = 511
-		valSize = 4096
-	)
-
 	var (
 		bgr *badger.DB
 		e   error
 		i   int
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *badger.Txn) (err error) {
 			for i = i; i < b.N; i++ {
@@ -1074,20 +910,9 @@ func BenchmarkBadgerPut(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")
@@ -1123,19 +948,11 @@ func BenchmarkBadgerPut(b *testing.B) {
 }
 
 func BenchmarkBadgerGet(b *testing.B) {
-	const (
-		keySize = 511
-		valSize = 4096
-	)
-
 	var (
 		bgr *badger.DB
 		e   error
 		i   int
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *badger.Txn) (err error) {
 			for i = i; i < b.N; i++ {
@@ -1164,20 +981,9 @@ func BenchmarkBadgerGet(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")
@@ -1217,20 +1023,12 @@ func BenchmarkBadgerGet(b *testing.B) {
 }
 
 func BenchmarkBadgerGetNext(b *testing.B) {
-	const (
-		keySize = 511
-		valSize = 4096
-	)
-
 	var (
 		bgr *badger.DB
 		e   error
 		i   int
 		itr *badger.Iterator
 		tmp string
-
-		key = make([][]byte, b.N)
-		val = make([][]byte, b.N)
 
 		put = func(txn *badger.Txn) (err error) {
 			for i = i; i < b.N; i++ {
@@ -1264,20 +1062,9 @@ func BenchmarkBadgerGetNext(b *testing.B) {
 		}
 	)
 
-	for i = 0; i < b.N; i++ {
-		key[i] = make([]byte, keySize)
-
-		_, e = rand.Read(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-
-		val[i] = make([]byte, valSize)
-
-		_, e = rand.Read(val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	tmp, e = os.MkdirTemp("", "")

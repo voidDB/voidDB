@@ -69,10 +69,10 @@
 //
 // Begin a transaction to store and retrieve data. Make it read-only except
 // when modifying data: write transactions should be used sparingly because
-// only exactly one of them can be active at any time. Ensure all changes are
-// safely synced to disk with mustSync if even the slightest risk of losing
-// those changes is a concern. Commit or abort a transaction as soon as they
-// are done.
+// there can only be one at any time. Ensure all changes are safely synced to
+// disk with mustSync if even the slightest risk of losing those changes is a
+// concern. Commit or abort a transaction to free up resources at the earliest
+// opportunity.
 //
 //	readonly, mustSync := false, true
 //
@@ -81,27 +81,9 @@
 //		panic(err)
 //	}
 //
-// Open a cursor if more than one keyspace is required. An application can map
-// different values to the same key so long as they reside in separate
-// keyspaces. The transaction handle acts as a cursor in the default keyspace
-// and is capable of all the cursor methods.
-//
-//	cur, err := txn.OpenCursor(
-//		[]byte("hello"),
-//	)
-//
-//	err = cur.Put(
+//	err = txn.Put(
 //		[]byte("greeting"),
 //		[]byte("Hello, World!"),
-//	)
-//
-//	cur, err = txn.OpenCursor(
-//		[]byte("goodbye"),
-//	)
-//
-//	err = cur.Put(
-//		[]byte("greeting"),
-//		[]byte("さようなら、世界。"),
 //	)
 //
 //	switch err {
@@ -109,32 +91,57 @@
 //		err = txn.Commit()
 //
 //	default:
+//		log.Println(err)
+//
 //		err = txn.Abort()
 //	}
 //
-//	readonly = true
+// Alternatively, use [*Void.Update] (or [*Void.View] for read-only
+// transactions!) for convenience and peace of mind.
 //
-//	txn, err = void.BeginTxn(readonly, mustSync)
+//	err = void.Update(mustSync,
+//		func(txn *voidDB.Txn) (err error) {
+//			// do things with txn ...
+//		},
+//	)
+//	if err != nil {
+//		panic(err)
+//	}
 //
-//	cur, err = txn.OpenCursor(
+// Open a cursor if more than one keyspace is required. An application can map
+// different values to the same key so long as they reside in separate
+// keyspaces. The transaction handle acts as a cursor in the default keyspace
+// and is capable of all the methods of [*cursor.Cursor].
+//
+//	cur0, err := txn.OpenCursor(
 //		[]byte("hello"),
 //	)
 //
-//	val, err := cur.Get(
+//	err = cur0.Put(
 //		[]byte("greeting"),
+//		[]byte("Hello, World!"),
 //	)
 //
-//	log.Printf("%s", val)
-//
-//	cur, err = txn.OpenCursor(
+//	cur1, err := txn.OpenCursor(
 //		[]byte("goodbye"),
 //	)
 //
-//	val, err = cur.Get(
+//	err = cur1.Put(
+//		[]byte("greeting"),
+//		[]byte("さようなら、世界。"),
+//	)
+//
+//	val, err := cur0.Get(
 //		[]byte("greeting"),
 //	)
 //
-//	log.Printf("%s", val)
+//	log.Printf("%s", val) // Hello, World!
+//
+//	val, err = cur1.Get(
+//		[]byte("greeting"),
+//	)
+//
+//	log.Printf("%s", val) // さようなら、世界。
 //
 // To iterate over a keyspace, use [*cursor.Cursor.GetNext]/GetPrev. Position
 // the cursor with [*cursor.Cursor.Get]/GetFirst/GetLast.

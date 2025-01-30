@@ -1,6 +1,7 @@
 package voidDB
 
 import (
+	"errors"
 	"os"
 
 	"golang.org/x/sys/unix"
@@ -108,6 +109,58 @@ func OpenVoid(path string, capacity int) (void *Void, e error) {
 	}
 
 	return
+}
+
+// View is similar to [*Void.Update], except that it begins and passes to
+// operation a read-only transaction. If operation results in a non-nil error,
+// that error is [errors.Join]-ed with the result of *Txn.Abort; otherwise only
+// the latter is returned.
+func (void *Void) View(operation func(*Txn) error) (e error) {
+	var (
+		txn *Txn
+	)
+
+	txn, e = void.BeginTxn(true, false)
+	if e != nil {
+		return
+	}
+
+	e = operation(txn)
+	if e != nil {
+		return errors.Join(e,
+			txn.Abort(),
+		)
+	}
+
+	return txn.Abort()
+}
+
+// Update is a convenient wrapper around [*Void.BeginTxn], [*Txn.Commit], and
+// [*Txn.Abort], to help applications ensure timely termination of writers.
+// If operation is successful (in that it returns a nil error), the transaction
+// is automatically committed and the result of [*Txn.Commit] is returned.
+// Otherwise, the transaction is aborted and the output of [errors.Join]
+// wrapping the return values of operation and [*Txn.Abort] is returned.
+// IMPORTANT: See also [*Void.BeginTxn] for an explanation of the mustSync
+// parameter.
+func (void *Void) Update(mustSync bool, operation func(*Txn) error) (e error) {
+	var (
+		txn *Txn
+	)
+
+	txn, e = void.BeginTxn(false, mustSync)
+	if e != nil {
+		return
+	}
+
+	e = operation(txn)
+	if e != nil {
+		return errors.Join(e,
+			txn.Abort(),
+		)
+	}
+
+	return txn.Commit()
 }
 
 // BeginTxn begins a new transaction. The resulting transaction cannot modify
