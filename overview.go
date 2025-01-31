@@ -19,10 +19,13 @@
 // even though they may originate from and operate within different threads and
 // processes.
 //
-// voidDB applications need not be concerned about broken lockfiles or
-// lingering effects of unfinished transactions should an uncontrolled shutdown
-// occur; its design guarantees automatic and immediate release of resources
-// upon process termination.
+// voidDB is resilient against torn writes. It automatically restores a
+// database to its last stable state in the event of a mid-write crash. Once a
+// transaction is committed and flushed to disk it is safe, but even if not it
+// could do no harm to existing data in storage. Applications need not be
+// concerned about broken lockfiles or lingering effects of unfinished
+// transactions should an uncontrolled shutdown occur; its design guarantees
+// automatic and immediate release of resources upon process termination.
 //
 // # Getting Started
 //
@@ -42,7 +45,6 @@
 //
 //	import (
 //		"errors"
-//		"log"
 //		"os"
 //
 //		"github.com/voidDB/voidDB"
@@ -67,41 +69,21 @@
 //		defer void.Close()
 //	}
 //
-// Begin a transaction to store and retrieve data. Make it read-only except
-// when modifying data: write transactions should be used sparingly because
-// there can only be one at any time. Ensure all changes are safely synced to
-// disk with mustSync if even the slightest risk of losing those changes is a
-// concern. Commit or abort a transaction to free up resources at the earliest
-// opportunity.
+// Use [*Void.View] (or [*Void.Update] only when modifying data) for
+// convenience and peace of mind. Ensure all changes are safely synced to disk
+// with mustSync set to true if even the slightest risk of losing those changes
+// is a concern.
 //
-//	readonly, mustSync := false, true
-//
-//	txn, err := void.BeginTxn(readonly, mustSync)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	err = txn.Put(
-//		[]byte("greeting"),
-//		[]byte("Hello, World!"),
-//	)
-//
-//	switch err {
-//	case nil:
-//		err = txn.Commit()
-//
-//	default:
-//		log.Println(err)
-//
-//		err = txn.Abort()
-//	}
-//
-// Alternatively, use [*Void.Update] (or [*Void.View] for read-only
-// transactions!) for convenience and peace of mind.
+//	mustSync := true
 //
 //	err = void.Update(mustSync,
 //		func(txn *voidDB.Txn) (err error) {
-//			// do things with txn ...
+//			err = txn.Put(
+//				[]byte("greeting"),
+//				[]byte("Hello, World!"),
+//			)
+//
+//			return
 //		},
 //	)
 //	if err != nil {
@@ -110,8 +92,8 @@
 //
 // Open a cursor if more than one keyspace is required. An application can map
 // different values to the same key so long as they reside in separate
-// keyspaces. The transaction handle acts as a cursor in the default keyspace
-// and is capable of all the methods of [*cursor.Cursor].
+// keyspaces. The transaction handle doubles as a cursor in the default
+// keyspace.
 //
 //	cur0, err := txn.OpenCursor(
 //		[]byte("hello"),
@@ -158,6 +140,11 @@
 //
 // # Author
 //
+// voidDB builds upon ideas in the celebrated [Lightning Memory-Mapped Database
+// Manager] on several key points of its high-level design, but otherwise it is
+// elegantly implemented from scratch to break free of limitations in function,
+// clarity, and performance.
+//
 // voidDB is a cherished toy, a journey into the Unknown, a heroic struggle,
 // and a work of love. It is the “Twee!” of a bird; a tree falling in the
 // forest; yet another programmer pouring their drop into the proverbial [bit]
@@ -167,6 +154,7 @@
 //
 // Copyright 2024 Joel Ling.
 //
+// [Lightning Memory-Mapped Database Manager]: http://www.lmdb.tech/doc/
 // [Install Go]: https://go.dev/doc/install
 // [memory-mapped]: https://man7.org/linux/man-pages/man2/mmap.2.html
 package voidDB

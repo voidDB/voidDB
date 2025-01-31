@@ -6,7 +6,8 @@ import (
 )
 
 // GetNext advances the cursor and retrieves the next key-value record, sorted
-// by key using [bytes.Compare].
+// by key using [bytes.Compare]. On a newly opened cursor, it has the same
+// effect as [*Cursor.GetFirst].
 //
 // CAUTION: See [*Cursor.Get].
 func (cursor *Cursor) GetNext() (key, value []byte, e error) {

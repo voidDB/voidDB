@@ -2,6 +2,8 @@ package voidDB
 
 import (
 	"bytes"
+	"hash"
+	"hash/fnv"
 	"time"
 
 	"github.com/voidDB/voidDB/common"
@@ -14,6 +16,10 @@ const (
 
 	metaMagic = "voidMETA"
 	version   = 0
+)
+
+var (
+	fnvHash hash.Hash64 = fnv.New64a()
 )
 
 type voidMeta []byte
@@ -36,6 +42,8 @@ func newMetaInit() (meta voidMeta) {
 	meta.setRootNodePointer(2 * pageSize)
 
 	meta.setFrontierPointer(3 * pageSize)
+
+	meta.setChecksum()
 
 	return
 }
@@ -81,11 +89,18 @@ func (meta voidMeta) setVersion() {
 }
 
 func (meta voidMeta) isMeta() bool {
-	return bytes.Equal(
-		meta.magic(),
-		[]byte(metaMagic),
-	) &&
-		meta.getVersion() == version
+	switch {
+	case !meta.checksumOK():
+		return false
+
+	case !bytes.Equal(meta.magic(), []byte(metaMagic)):
+		return false
+
+	case meta.getVersion() != version:
+		return false
+	}
+
+	return true
 }
 
 func (meta voidMeta) timestamp() []byte {
@@ -166,6 +181,40 @@ func (meta voidMeta) setFrontierPointer(pointer int) {
 	)
 
 	return
+}
+
+func (meta voidMeta) checksum() []byte {
+	return common.Field(meta, 7*wordSize, wordSize)
+}
+
+func (meta voidMeta) computeChecksum() []byte {
+	fnvHash.Reset()
+
+	fnvHash.Write(meta[:7*wordSize])
+
+	fnvHash.Write(
+		make([]byte, wordSize),
+	)
+
+	fnvHash.Write(meta[8*wordSize:])
+
+	return fnvHash.Sum(nil)
+}
+
+func (meta voidMeta) setChecksum() {
+	copy(
+		meta.checksum(),
+		meta.computeChecksum(),
+	)
+
+	return
+}
+
+func (meta voidMeta) checksumOK() bool {
+	return bytes.Equal(
+		meta.checksum(),
+		meta.computeChecksum(),
+	)
 }
 
 func (meta voidMeta) freeQueue(size int) freeQueue {

@@ -230,15 +230,10 @@ func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 // application, but in any case they pose no danger whatsoever to the data
 // safely jettisoned.
 func (void *Void) Close() (e error) {
-	e = void.file.Close()
-	if e != nil {
-		return
-	}
-
-	e = unix.Munmap(void.mmap)
-	if e != nil {
-		return
-	}
+	e = errors.Join(
+		void.file.Close(),
+		unix.Munmap(void.mmap),
+	)
 
 	*void = Void{}
 

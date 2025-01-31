@@ -66,8 +66,18 @@ func BenchmarkVoidPut(b *testing.B) {
 		e    error
 		i    int
 		path string
-		txnW *voidDB.Txn
 		void *voidDB.Void
+
+		put = func(txn *voidDB.Txn) (err error) {
+			for i = 0; i < b.N; i++ {
+				err = txn.Put(key[i], val[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
 	)
 
 	e = populateKeyVal(b.N)
@@ -87,21 +97,9 @@ func BenchmarkVoidPut(b *testing.B) {
 		b.Fatal(e)
 	}
 
-	txnW, e = void.BeginTxn(false, true)
-	if e != nil {
-		b.Fatal(e)
-	}
-
 	b.ResetTimer()
 
-	for i = 0; i < b.N; i++ {
-		e = txnW.Put(key[i], val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-	}
-
-	e = txnW.Commit()
+	e = void.Update(true, put)
 	if e != nil {
 		b.Fatal(e)
 	}
@@ -113,8 +111,6 @@ func BenchmarkVoidPut(b *testing.B) {
 
 func BenchmarkVoidGet(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		mapSize = 1 << 30 // 1 GiB
 	)
 
@@ -122,9 +118,29 @@ func BenchmarkVoidGet(b *testing.B) {
 		e    error
 		i    int
 		path string
-		txnR *voidDB.Txn
-		txnW *voidDB.Txn
 		void *voidDB.Void
+
+		put = func(txn *voidDB.Txn) (err error) {
+			for i = 0; i < b.N; i++ {
+				err = txn.Put(key[i], val[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+
+		get = func(txn *voidDB.Txn) (err error) {
+			for i = 0; i < b.N; i++ {
+				_, err = txn.Get(key[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
 	)
 
 	e = populateKeyVal(b.N)
@@ -144,35 +160,16 @@ func BenchmarkVoidGet(b *testing.B) {
 		b.Fatal(e)
 	}
 
-	txnW, e = void.BeginTxn(false, false)
-	if e != nil {
-		b.Fatal(e)
-	}
-
-	for i = 0; i < b.N; i++ {
-		e = txnW.Put(key[i], val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-	}
-
-	e = txnW.Commit()
-	if e != nil {
-		b.Fatal(e)
-	}
-
-	txnR, e = void.BeginTxn(true, false)
+	e = void.Update(false, put)
 	if e != nil {
 		b.Fatal(e)
 	}
 
 	b.ResetTimer()
 
-	for i = 0; i < b.N; i++ {
-		_, e = txnR.Get(key[i])
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = void.View(get)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	b.StopTimer()
@@ -182,8 +179,6 @@ func BenchmarkVoidGet(b *testing.B) {
 
 func BenchmarkVoidGetNext(b *testing.B) {
 	const (
-		keySize = 511
-		valSize = 4096
 		mapSize = 1 << 30 // 1 GiB
 	)
 
@@ -191,9 +186,29 @@ func BenchmarkVoidGetNext(b *testing.B) {
 		e    error
 		i    int
 		path string
-		txnR *voidDB.Txn
-		txnW *voidDB.Txn
 		void *voidDB.Void
+
+		put = func(txn *voidDB.Txn) (err error) {
+			for i = 0; i < b.N; i++ {
+				err = txn.Put(key[i], val[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+
+		get = func(txn *voidDB.Txn) (err error) {
+			for i = 0; i < b.N; i++ {
+				_, _, err = txn.GetNext()
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
 	)
 
 	e = populateKeyVal(b.N)
@@ -213,35 +228,16 @@ func BenchmarkVoidGetNext(b *testing.B) {
 		b.Fatal(e)
 	}
 
-	txnW, e = void.BeginTxn(false, false)
-	if e != nil {
-		b.Fatal(e)
-	}
-
-	for i = 0; i < b.N; i++ {
-		e = txnW.Put(key[i], val[i])
-		if e != nil {
-			b.Fatal(e)
-		}
-	}
-
-	e = txnW.Commit()
-	if e != nil {
-		b.Fatal(e)
-	}
-
-	txnR, e = void.BeginTxn(true, false)
+	e = void.Update(false, put)
 	if e != nil {
 		b.Fatal(e)
 	}
 
 	b.ResetTimer()
 
-	for i = 0; i < b.N; i++ {
-		_, _, e = txnR.GetNext()
-		if e != nil {
-			b.Fatal(e)
-		}
+	e = void.View(get)
+	if e != nil {
+		b.Fatal(e)
 	}
 
 	b.StopTimer()

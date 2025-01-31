@@ -50,19 +50,19 @@ func (txn *Txn) Timestamp() time.Time {
 // OpenCursor returns a handle on a cursor associated with the transaction and
 // a particular keyspace. Keyspaces allow multiple datasets with potentially
 // intersecting (overlapping) sets of keys to reside within the same database
-// without collision, provided that all keys are unique within their respective
-// keyspaces.
+// without conflict, provided that all keys are unique within their respective
+// keyspaces. Argument keyspace must not be simultaneously non-nil and of zero
+// length, or otherwise longer than [node.MaxKeySize]. Passing nil as the
+// argument causes OpenCursor to return a cursor in the default keyspace.
 //
 // CAUTION: An application utilising keyspaces should avoid modifying records
 // within the default keyspace, as it is used to store pointers to all the
 // other keyspaces. There is virtually no limit on the number of keyspaces in a
 // database.
 //
-// The transaction handle already doubles as a cursor associated with the
-// default keyspace with all its accompanying methods. Hence, there is no need
-// to invoke OpenCursor unless multiple keyspaces are required, however the
-// embedded cursor handle could be obtained by passing nil as an argument
-// nonetheless.
+// Unless multiple keyspaces are required, there is usually no need to invoke
+// OpenCursor because the transaction handle embeds a [*cursor.Cursor]
+// associated with the default keyspace.
 func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 	var (
 		pointer []byte
@@ -106,21 +106,19 @@ func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 // utilisation. Following an invocation of Abort, the transaction handle must
 // no longer be used.
 func (txn *Txn) Abort() (e error) {
-	defer func() { *txn = Txn{} }()
+	switch {
+	case txn.lockfile != nil:
+		e = txn.lockfile.Close()
 
-	e = txn.readers.Close()
-	if e != nil {
-		return
+		fallthrough
+
+	default:
+		e = errors.Join(e,
+			txn.readers.Close(),
+		)
 	}
 
-	if txn.lockfile == nil {
-		return
-	}
-
-	e = txn.lockfile.Close()
-	if e != nil {
-		return
-	}
+	*txn = Txn{}
 
 	return
 }
@@ -152,6 +150,13 @@ func (txn *Txn) Commit() (e error) {
 
 	for offset, data = range txn.saveList {
 		e = txn.write(data, offset)
+		if e != nil {
+			return
+		}
+	}
+
+	if txn.sync != nil {
+		e = txn.sync()
 		if e != nil {
 			return
 		}
@@ -279,6 +284,8 @@ func (txn *Txn) getMeta() (e error) {
 }
 
 func (txn *Txn) putMeta() error {
+	txn.meta.setChecksum()
+
 	return txn.write(txn.meta,
 		txn.meta.getSerialNumber()%2*pageSize,
 	)
