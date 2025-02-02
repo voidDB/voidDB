@@ -4,8 +4,7 @@ import (
 	"io"
 	"math"
 	"os"
-
-	"golang.org/x/sys/unix"
+	"syscall"
 
 	"github.com/voidDB/voidDB/common"
 )
@@ -14,6 +13,9 @@ const (
 	maxNReaders = 1 << 22 // maximum number of PIDs allowed on most systems
 	pathSuffix  = ".readers"
 	wordSize    = common.WordSize
+
+	f_ofd_getlk = 0x24
+	f_ofd_setlk = 0x25
 )
 
 type ReaderTable struct {
@@ -49,12 +51,12 @@ func OpenReaderTable(path string) (table *ReaderTable, e error) {
 		return
 	}
 
-	table.mmap, e = unix.Mmap(
+	table.mmap, e = syscall.Mmap(
 		int(table.file.Fd()),
 		0,
 		maxNReaders*table.slotLength(),
-		unix.PROT_READ,
-		unix.MAP_PRIVATE,
+		syscall.PROT_READ,
+		syscall.MAP_PRIVATE,
 	)
 	if e != nil {
 		return
@@ -91,7 +93,7 @@ func (table *ReaderTable) Close() (e error) {
 		return
 	}
 
-	e = unix.Munmap(table.mmap)
+	e = syscall.Munmap(table.mmap)
 	if e != nil {
 		return
 	}
@@ -156,37 +158,37 @@ func (table *ReaderTable) slotLength() int {
 
 func (table *ReaderTable) lockSlot(index int) error {
 	var (
-		flock = &unix.Flock_t{
-			Type:   unix.F_WRLCK,
+		flock = &syscall.Flock_t{
+			Type:   syscall.F_WRLCK,
 			Whence: io.SeekStart,
 			Start:  int64(table.slotOffset(index)),
 			Len:    int64(table.slotLength()),
 		}
 	)
 
-	return unix.FcntlFlock(
+	return syscall.FcntlFlock(
 		table.file.Fd(),
-		unix.F_OFD_SETLK, // process-indepedent; released when file desc. closed
+		f_ofd_setlk, // process-indepedent; released when file desc. closed
 		flock,
 	)
 }
 
 func (table *ReaderTable) slotIsLocked(index int) bool {
 	var (
-		flock = &unix.Flock_t{
+		flock = &syscall.Flock_t{
 			Whence: io.SeekStart,
 			Start:  int64(table.slotOffset(index)),
 			Len:    int64(table.slotLength()),
 		}
 	)
 
-	unix.FcntlFlock(
+	syscall.FcntlFlock(
 		table.file.Fd(),
-		unix.F_OFD_GETLK,
+		f_ofd_getlk,
 		flock,
 	)
 
-	if flock.Type == unix.F_UNLCK {
+	if flock.Type == syscall.F_UNLCK {
 		return false
 	}
 

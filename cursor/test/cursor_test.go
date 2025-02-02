@@ -5,7 +5,7 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"github.com/voidDB/voidDB/cursor/test/steps"
+	"test/steps"
 )
 
 func TestCursor(t *testing.T) {

@@ -3,9 +3,8 @@ package voidDB
 import (
 	"errors"
 	"os"
+	"syscall"
 	"time"
-
-	"golang.org/x/sys/unix"
 
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/cursor"
@@ -222,9 +221,9 @@ func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 			return
 		}
 
-		e = unix.Flock(
+		e = syscall.Flock(
 			int(txn.lockfile.Fd()),
-			unix.LOCK_EX|unix.LOCK_NB,
+			syscall.LOCK_EX|syscall.LOCK_NB,
 		)
 		if e != nil {
 			return
@@ -326,7 +325,7 @@ type writeFunc func([]byte, int) error
 
 var (
 	denyPermission writeFunc = func([]byte, int) error {
-		return unix.EACCES
+		return syscall.EACCES
 	}
 )
 

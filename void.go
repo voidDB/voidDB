@@ -3,8 +3,7 @@ package voidDB
 import (
 	"errors"
 	"os"
-
-	"golang.org/x/sys/unix"
+	"syscall"
 
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/node"
@@ -97,12 +96,12 @@ func OpenVoid(path string, capacity int) (void *Void, e error) {
 		capacity = int(stat.Size())
 	}
 
-	void.mmap, e = unix.Mmap(
+	void.mmap, e = syscall.Mmap(
 		int(void.file.Fd()),
 		0,
 		capacity,
-		unix.PROT_READ,
-		unix.MAP_PRIVATE,
+		syscall.PROT_READ,
+		syscall.MAP_PRIVATE,
 	)
 	if e != nil {
 		return
@@ -232,7 +231,7 @@ func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 func (void *Void) Close() (e error) {
 	e = errors.Join(
 		void.file.Close(),
-		unix.Munmap(void.mmap),
+		syscall.Munmap(void.mmap),
 	)
 
 	*void = Void{}

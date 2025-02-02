@@ -1,4 +1,4 @@
-package teststeps
+package steps
 
 import (
 	"context"

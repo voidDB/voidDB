@@ -5,24 +5,24 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"github.com/voidDB/voidDB/test/steps"
+	"test/steps"
 )
 
 func TestVoid(t *testing.T) {
 	var (
 		scenarioInitializer = func(sc *godog.ScenarioContext) {
-			teststeps.AddStepSetUp(sc)
-			teststeps.AddStepTearDown(sc)
+			steps.AddStepSetUp(sc)
+			steps.AddStepTearDown(sc)
 
-			teststeps.AddStepNewVoid(sc)
-			teststeps.AddStepBeginTxn(sc)
-			teststeps.AddStepOpenCursor(sc)
-			teststeps.AddStepGet(sc)
-			teststeps.AddStepGetNext(sc)
-			teststeps.AddStepPut(sc)
-			teststeps.AddStepDel(sc)
-			teststeps.AddStepCommitTxn(sc)
-			teststeps.AddStepAbortTxn(sc)
+			steps.AddStepNewVoid(sc)
+			steps.AddStepBeginTxn(sc)
+			steps.AddStepOpenCursor(sc)
+			steps.AddStepGet(sc)
+			steps.AddStepGetNext(sc)
+			steps.AddStepPut(sc)
+			steps.AddStepDel(sc)
+			steps.AddStepCommitTxn(sc)
+			steps.AddStepAbortTxn(sc)
 		}
 
 		options = &godog.Options{
