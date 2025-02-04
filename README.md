@@ -16,25 +16,24 @@ computers running the Linux operating system.
 
 voidDB features Put, Get, and Del operations as well as forward and backward
 iteration over self-sorting data in ACID (atomic, consistent, isolated, and
-durable) transactions. Readers retain a consistent view of the data
-throughout their lifetime, even as newer transactions are being committed:
-only pages freed by transactions older than the oldest surviving reader are
-actively recycled.
+durable) transactions. Readers retain a consistent view of the data throughout
+their lifetime, even as newer transactions are being committed: only pages
+freed by transactions older than the oldest surviving reader are actively
+recycled.
 
 voidDB employs a copy-on-write strategy to maintain data in a multi-version
-concurrency-controlled (MVCC) B+ tree structure. It allows virtually any
-number of concurrent readers, but only one active writer at any given
-moment. Readers (and the sole writer) neither compete nor block one another,
-even though they may originate from and operate within different threads and
-processes.
+concurrency-controlled (MVCC) B+ tree structure. It allows virtually any number
+of concurrent readers, but only one active writer at any given moment. Readers
+(and the sole writer) neither compete nor block one another, even though they
+may originate from and operate within different threads and processes.
 
-voidDB is resilient against torn writes. It automatically restores a
-database to its last stable state in the event of a mid-write crash. Once a
-transaction is committed and flushed to disk it is safe, but even if not it
-could do no harm to existing data in storage. Applications need not be
-concerned about broken lockfiles or lingering effects of unfinished
-transactions should an uncontrolled shutdown occur; its design guarantees
-automatic and immediate release of resources upon process termination.
+voidDB is resilient against torn writes. It automatically restores a database
+to its last stable state in the event of a mid-write crash. Once a transaction
+is committed and flushed to disk it is safe, but even if not it could do no
+harm to existing data in storage. Applications need not be concerned about
+broken lockfiles or lingering effects of unfinished transactions should an
+uncontrolled shutdown occur; its design guarantees automatic and immediate
+release of resources upon process termination.
 
 ## Benchmarks
 
@@ -70,12 +69,11 @@ $ go version
 go version go1.22.3 linux/arm64
 ```
 
-Then, import voidDB in your Go application. The following would result in
-the creation of a database file and its reader table in the working
-directory. Set the database capacity to any reasonably large value to make
-sufficient room for the data you intend to store, even if it exceeds the
-total amount of physical memory; neither memory nor disk is immediately
-consumed to capacity.
+Then, import voidDB in your Go application. The following would result in the
+creation of a database file and its reader table in the working directory. Set
+the database capacity to any reasonably large value to make sufficient room for
+the data you intend to store, even if it exceeds the total amount of physical
+memory; neither memory nor disk is immediately consumed to capacity.
 
 ```go
 package main
@@ -107,10 +105,9 @@ func main() {
 }
 ```
 
-Use `*Void.View` (or `*Void.Update` only when modifying data) for
-convenience and peace of mind. Ensure all changes are safely synced to disk
-with mustSync set to true if even the slightest risk of losing those changes
-is a concern.
+Use `*Void.View` (or `*Void.Update` only when modifying data) for convenience
+and peace of mind. Ensure all changes are safely synced to disk with mustSync
+set to true if even the slightest risk of losing those changes is a concern.
 
 ```go
 mustSync := true
@@ -131,9 +128,8 @@ if err != nil {
 ```
 
 Open a cursor if more than one keyspace is required. An application can map
-different values to the same key so long as they reside in separate
-keyspaces. The transaction handle doubles as a cursor in the default
-keyspace.
+different values to the same key so long as they reside in separate keyspaces.
+The transaction handle doubles as a cursor in the default keyspace.
 
 ```go
 cur0, err := txn.OpenCursor(
@@ -189,11 +185,11 @@ Manager](http://www.lmdb.tech/doc/) on several key points of its high-level
 design, but otherwise it is implemented from scratch to break free of
 limitations in function, performance, and clarity.
 
-voidDB is a cherished toy, a journey into the Unknown, a heroic struggle,
-and a work of love. It is the “Twee!” of a bird; a tree falling in the
-forest; yet another programmer pouring their drop into the proverbial [bit]
-bucket. Above all, it is a shrine unto simple, readable, and functional
-code; an assertion that the dichotomy between such aesthetics and practical
-performance is mere illusion.
+voidDB is a cherished toy, a journey into the Unknown, a heroic struggle, and a
+work of love. It is the “Twee!” of a bird; a tree falling in the forest; yet
+another programmer pouring their drop into the proverbial [bit] bucket. Above
+all, it is a shrine unto simple, readable, and functional code; an assertion
+that the dichotomy between such aesthetics and practical performance is mere
+illusion.
 
 Copyright 2024 Joel Ling

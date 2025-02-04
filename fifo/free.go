@@ -1,4 +1,4 @@
-package free
+package fifo
 
 import (
 	"bytes"

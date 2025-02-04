@@ -8,7 +8,6 @@ import (
 
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/cursor"
-	"github.com/voidDB/voidDB/free"
 	"github.com/voidDB/voidDB/node"
 	"github.com/voidDB/voidDB/reader"
 )
@@ -292,28 +291,15 @@ func (txn *Txn) putMeta() error {
 
 func (txn *Txn) enqueueFreeList() {
 	var (
-		queue freeQueue
-
-		head int
 		size int
-		tail int
 	)
 
 	for size = range txn.freeList {
-		queue = txn.meta.freeQueue(size)
-
-		head, tail = free.Put(
+		txn.meta.freeQueue(size).Enqueue(
 			medium{txn, nil},
-			queue.getTailPointer(),
 			txn.meta.getSerialNumber(),
 			txn.freeList[size],
 		)
-
-		if queue.getHeadPointer() == 0 {
-			queue.setHeadPointer(head)
-		}
-
-		queue.setTailPointer(tail)
 	}
 
 	return

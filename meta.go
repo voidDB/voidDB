@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/voidDB/voidDB/common"
+	"github.com/voidDB/voidDB/fifo"
 )
 
 const (
@@ -217,68 +218,9 @@ func (meta voidMeta) checksumOK() bool {
 	)
 }
 
-func (meta voidMeta) freeQueue(size int) freeQueue {
+func (meta voidMeta) freeQueue(size int) fifo.FIFO {
 	return common.Field(meta,
 		pageSize/2+lineSize*(logarithm(size)-1),
 		lineSize,
 	)
-}
-
-type freeQueue []byte
-
-func (queue freeQueue) headPointer() []byte {
-	return common.Field(queue, 0, wordSize)
-}
-
-func (queue freeQueue) getHeadPointer() int {
-	return common.GetInt(
-		queue.headPointer(),
-	)
-}
-
-func (queue freeQueue) setHeadPointer(pointer int) {
-	common.PutInt(
-		queue.headPointer(),
-		pointer,
-	)
-
-	return
-}
-
-func (queue freeQueue) nextIndex() []byte {
-	return common.Field(queue, wordSize, wordSize)
-}
-
-func (queue freeQueue) getNextIndex() int {
-	return common.GetInt(
-		queue.nextIndex(),
-	)
-}
-
-func (queue freeQueue) setNextIndex(pointer int) {
-	common.PutInt(
-		queue.nextIndex(),
-		pointer,
-	)
-
-	return
-}
-
-func (queue freeQueue) tailPointer() []byte {
-	return common.Field(queue, 2*wordSize, wordSize)
-}
-
-func (queue freeQueue) getTailPointer() int {
-	return common.GetInt(
-		queue.tailPointer(),
-	)
-}
-
-func (queue freeQueue) setTailPointer(pointer int) {
-	common.PutInt(
-		queue.tailPointer(),
-		pointer,
-	)
-
-	return
 }

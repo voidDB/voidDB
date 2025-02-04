@@ -1,6 +1,29 @@
-package free
+package fifo
 
-func Put(medium Medium, offset, txnID int, pointers []int) (head, tail int) {
+func (fifo FIFO) Enqueue(medium Medium, txnID int, pointers []int) {
+	var (
+		head int
+		tail int
+	)
+
+	head, tail = enqueue(medium,
+		fifo.getTailPointer(),
+		txnID,
+		pointers,
+	)
+
+	if fifo.getHeadPointer() == 0 {
+		fifo.setHeadPointer(head)
+	}
+
+	fifo.setTailPointer(tail)
+
+	return
+}
+
+func enqueue(medium Medium, offset, txnID int, pointers []int) (
+	head, tail int,
+) {
 	var (
 		i      int
 		length int
@@ -29,7 +52,7 @@ func Put(medium Medium, offset, txnID int, pointers []int) (head, tail int) {
 		)
 	}
 
-	head, tail = Put(medium, -1, txnID, pointers[length:])
+	head, tail = enqueue(medium, -1, txnID, pointers[length:])
 
 	free.setNextPointer(head)
 

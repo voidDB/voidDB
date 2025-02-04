@@ -1,7 +1,7 @@
 package voidDB
 
 import (
-	"github.com/voidDB/voidDB/free"
+	"github.com/voidDB/voidDB/fifo"
 )
 
 type medium struct {
@@ -79,40 +79,17 @@ func (txn medium) getFreePagePointer(size int) (pointer int) {
 	}
 
 	var (
-		e          error
-		nextIndex  int
-		nextOffset int
-		offset     int
-		queue      freeQueue
-		txnID      int
+		e     error
+		queue fifo.FIFO
 	)
 
 	queue = txn.meta.freeQueue(size)
 
-	offset = queue.getHeadPointer()
-
-	txnID, pointer, nextOffset, nextIndex, e = free.Get(txn, offset,
-		queue.getNextIndex(),
-	)
-
-	switch {
-	case e != nil:
-		fallthrough
-
-	case txnID >= txn.readers.OldestTxn:
+	pointer, e = queue.Dequeue(txn, txn.readers.OldestTxn)
+	if e != nil {
 		pointer = txn.meta.getFrontierPointer()
 
 		txn.meta.setFrontierPointer(pointer + size)
-
-	case nextOffset != offset:
-		txn.Free(offset, pageSize)
-
-		queue.setHeadPointer(nextOffset)
-
-		fallthrough
-
-	default:
-		queue.setNextIndex(nextIndex)
 	}
 
 	txn.freeSafe[pointer] = struct{}{}
