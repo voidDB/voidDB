@@ -50,7 +50,7 @@ func (txn *Txn) Timestamp() time.Time {
 // intersecting (overlapping) sets of keys to reside within the same database
 // without conflict, provided that all keys are unique within their respective
 // keyspaces. Argument keyspace must not be simultaneously non-nil and of zero
-// length, or otherwise longer than [node.MaxKeySize]. Passing nil as the
+// length, or otherwise longer than [node.MaxKeyLength]. Passing nil as the
 // argument causes OpenCursor to return a cursor in the default keyspace.
 //
 // CAUTION: An application utilising keyspaces should avoid modifying records

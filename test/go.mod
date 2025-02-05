@@ -2,13 +2,15 @@ module test
 
 go 1.22.3
 
+replace github.com/voidDB/voidDB => ..
+
 require (
 	github.com/bmatsuo/lmdb-go v1.8.0
 	github.com/cucumber/godog v0.15.0
 	github.com/dgraph-io/badger/v4 v4.5.1
 	github.com/stretchr/testify v1.10.0
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/voidDB/voidDB v0.1.3
+	github.com/voidDB/voidDB v0.0.0-00010101000000-000000000000
 	go.etcd.io/bbolt v1.3.11
 )
 

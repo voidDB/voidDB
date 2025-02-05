@@ -8,14 +8,14 @@ import (
 )
 
 const (
-	MaxKeySize   = node.MaxKeySize
-	MaxValueSize = math.MaxUint32
+	MaxKeyLength   = node.MaxKeyLength
+	MaxValueLength = math.MaxUint32
 )
 
 // Put stores a key-value pair (or overwrites the corresponding value, if key
 // already exists) and positions the cursor at the inserted record. It returns
 // [syscall.EINVAL] (“invalid argument”) if the length of key or value is zero,
-// or otherwise exceeds [MaxKeySize] or [MaxValueSize] respectively.
+// or otherwise exceeds [MaxKeyLength] or [MaxValueLength] respectively.
 func (cursor *Cursor) Put(key, value []byte) (e error) {
 	var (
 		newRoot  node.Node
@@ -28,13 +28,13 @@ func (cursor *Cursor) Put(key, value []byte) (e error) {
 	case len(key) == 0:
 		fallthrough
 
-	case len(key) > MaxKeySize:
+	case len(key) > MaxKeyLength:
 		fallthrough
 
 	case len(value) == 0:
 		fallthrough
 
-	case len(value) > MaxValueSize:
+	case len(value) > MaxValueLength:
 		return syscall.EINVAL
 	}
 

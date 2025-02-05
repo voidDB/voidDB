@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	MaxKeySize    = 512
+	MaxKeyLength  = 512
 	MaxNodeLength = 7
 
 	pageSize = common.PageSize
@@ -69,8 +69,8 @@ func (node Node) setValueOrChild(index, pointer, length int) {
 
 func (node Node) key(index int) Key {
 	return common.Field(node,
-		MaxKeySize*(index+1),
-		MaxKeySize,
+		MaxKeyLength*(index+1),
+		MaxKeyLength,
 	)
 }
 
