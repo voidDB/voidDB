@@ -34,7 +34,9 @@ func (cursor *Cursor) del() (e error) {
 		oldNode.ValueOrChild(cursor.index),
 	)
 
-	newNode = oldNode.Update(cursor.index, tombstone, 0)
+	newNode = oldNode.Update(cursor.index, tombstone, 0,
+		cursor.medium.Meta(),
+	)
 
 	pointer = cursor.medium.Save(newNode)
 
@@ -46,7 +48,9 @@ func (cursor *Cursor) del() (e error) {
 			return
 		}
 
-		newNode = oldNode.Update(cursor.stack[i].index, pointer, 0)
+		newNode = oldNode.Update(cursor.stack[i].index, pointer, 0,
+			cursor.medium.Meta(),
+		)
 
 		pointer = cursor.medium.Save(newNode)
 

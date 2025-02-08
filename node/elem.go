@@ -62,3 +62,16 @@ func (elem Elem) setPointer(pointer int) {
 
 	return
 }
+
+func (elem Elem) extraMetadata() []byte {
+	return common.Field(elem, 2*wordSize, 6*wordSize)
+}
+
+func (elem Elem) setExtraMetadata(metadata []byte) {
+	copy(
+		elem.extraMetadata(),
+		metadata,
+	)
+
+	return
+}

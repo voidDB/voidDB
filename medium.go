@@ -1,6 +1,7 @@
 package voidDB
 
 import (
+	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/fifo"
 )
 
@@ -8,6 +9,10 @@ type medium struct {
 	*Txn
 
 	keyspace []byte
+}
+
+func (txn medium) Meta() []byte {
+	return common.Field(txn.meta, 2*wordSize, 2*wordSize)
 }
 
 func (txn medium) Load(offset, length int) (data []byte) {

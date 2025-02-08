@@ -1,6 +1,8 @@
 package node
 
-func (node Node) Insert(index, pointerL, pointerR, length int, key []byte) (
+func (node Node) Insert(
+	index, pointerL, pointerR, length int, key, metadata []byte,
+) (
 	newNode, _ Node, _ []byte,
 ) {
 	var (
@@ -23,10 +25,10 @@ func (node Node) Insert(index, pointerL, pointerR, length int, key []byte) (
 
 	newNode.setKey(index, key)
 
-	newNode.setValueOrChild(index, pointerL, length)
+	newNode.setValueOrChild(index, pointerL, length, metadata)
 
 	if pointerR > 0 {
-		newNode.setValueOrChild(index+1, pointerR, length)
+		newNode.setValueOrChild(index+1, pointerR, length, metadata)
 	}
 
 	if node.Length()+1 == MaxNodeLength {

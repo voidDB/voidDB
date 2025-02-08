@@ -57,12 +57,14 @@ func (node Node) ValueOrChild(index int) (pointer, length int) {
 	return elem.getPointer(), elem.getValLen()
 }
 
-func (node Node) setValueOrChild(index, pointer, length int) {
+func (node Node) setValueOrChild(index, pointer, length int, metadata []byte) {
 	var elem Elem = node.elem(index)
 
 	elem.setPointer(pointer)
 
 	elem.setValLen(length)
+
+	elem.setExtraMetadata(metadata)
 
 	return
 }

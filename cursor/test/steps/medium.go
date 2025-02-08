@@ -9,6 +9,10 @@ import (
 
 type Medium []byte
 
+func (m *Medium) Meta() []byte {
+	return []byte("voidTestMetadata")
+}
+
 func (m *Medium) Save(bytes []byte) (pointer int) {
 	pointer = len(*m)
 
