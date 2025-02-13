@@ -16,6 +16,9 @@ const (
 // already exists) and positions the cursor at the inserted record. It returns
 // [syscall.EINVAL] (“invalid argument”) if the length of key or value is zero,
 // or otherwise exceeds [MaxKeyLength] or [MaxValueLength] respectively.
+//
+// CAUTION: The data in value must not be modified until the transaction has
+// been successfully committed.
 func (cursor *Cursor) Put(key, value []byte) (e error) {
 	var (
 		newRoot  node.Node

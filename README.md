@@ -147,7 +147,7 @@ cur1, err := txn.OpenCursor(
 
 err = cur1.Put(
 	[]byte("greeting"),
-	[]byte("さようなら、世界。"),
+	[]byte("さらばこの世、わらわはもう寝るぞよ。"),
 )
 
 val, err := cur0.Get(
@@ -160,7 +160,7 @@ val, err = cur1.Get(
 	[]byte("greeting"),
 )
 
-log.Printf("%s", val) // さようなら、世界。
+log.Printf("%s", val) // さらばこの世、わらわはもう寝るぞよ。
 ```
 
 To iterate over a keyspace, use `*cursor.Cursor.GetNext`/`GetPrev`. Position

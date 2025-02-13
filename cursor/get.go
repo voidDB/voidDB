@@ -8,7 +8,7 @@ import (
 // Get retrieves the value corresponding to key and positions the cursor at the
 // record found.
 //
-// CAUTION: the value returned is immutable and valid only during the lifetime
+// CAUTION: The value returned is immutable and valid only during the lifetime
 // of the transaction to which the cursor belongs, since the slice merely
 // reflects the relevant section of the memory map containing the value. Hence,
 // any attempt at mutating the slice at any time or accessing it after the
