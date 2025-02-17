@@ -1,8 +1,10 @@
 module test
 
-go 1.22.3
+go 1.23
 
-replace github.com/voidDB/voidDB => ..
+toolchain go1.24.0
+
+replace github.com/voidDB/voidDB => ../
 
 require (
 	github.com/bmatsuo/lmdb-go v1.8.0
@@ -11,7 +13,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/voidDB/voidDB v0.0.0-00010101000000-000000000000
-	go.etcd.io/bbolt v1.3.11
+	go.etcd.io/bbolt v1.4.0
 )
 
 require (
@@ -31,7 +33,7 @@ require (
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
