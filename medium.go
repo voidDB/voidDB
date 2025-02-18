@@ -36,13 +36,17 @@ func (txn medium) Save(data []byte) (pointer int) {
 		)
 	)
 
-	pointer = txn.getFreePagePointer(length)
+	switch txn.freeze {
+	case true:
+		pointer = txn.getNewPagePointer(length)
 
-	txn.saveList[pointer] = data
+	default:
+		pointer = txn.getFreePagePointer(length)
 
-	if !txn.freeze {
 		txn.setRootNodePointer(txn.keyspace, pointer)
 	}
+
+	txn.saveList[pointer] = data
 
 	return
 }
@@ -54,9 +58,19 @@ func (txn medium) SaveAt(offset int, data []byte) {
 }
 
 func (txn medium) Free(offset, length int) {
+	var (
+		warm bool
+	)
+
 	length = align(length)
 
-	txn.freeList[length] = append(txn.freeList[length], offset)
+	switch _, warm = txn.warmList[offset]; warm {
+	case true:
+		txn.freeWarm[length] = append(txn.freeWarm[length], offset)
+
+	default:
+		txn.freeCold[length] = append(txn.freeCold[length], offset)
+	}
 
 	delete(txn.saveList, offset)
 
@@ -65,39 +79,57 @@ func (txn medium) Free(offset, length int) {
 
 func (txn medium) getFreePagePointer(size int) (pointer int) {
 	var (
+		e error
+	)
+
+	pointer = txn.getFreePageWarm(size)
+
+	if pointer > 0 {
+		return
+	}
+
+	pointer, e = txn.getFreePageCold(size)
+
+	if e != nil {
+		pointer = txn.getNewPagePointer(size)
+	}
+
+	txn.warmList[pointer] = struct{}{}
+
+	return
+}
+
+func (txn medium) getFreePageWarm(size int) (pointer int) {
+	var (
 		available bool
 		pointers  []int
 	)
 
-	if !txn.freeze {
-		if pointers, available = txn.freeList[size]; available {
-			for _, pointer = range pointers {
-				txn.freeList[size] = txn.freeList[size][1:]
+	pointers, available = txn.freeWarm[size]
 
-				if _, available = txn.freeSafe[pointer]; available {
-					return
-				}
-
-				txn.freeList[size] = append(txn.freeList[size], pointer)
-			}
-		}
+	if !available || len(pointers) == 0 {
+		return
 	}
 
+	pointer = pointers[0]
+
+	txn.freeWarm[size] = pointers[1:]
+
+	return
+}
+
+func (txn medium) getFreePageCold(size int) (pointer int, e error) {
 	var (
-		e     error
-		queue fifo.FIFO
+		queue fifo.FIFO = txn.meta.freeQueue(size)
 	)
 
-	queue = txn.meta.freeQueue(size)
+	return queue.Dequeue(txn, txn.readers.OldestTxn)
+}
 
-	pointer, e = queue.Dequeue(txn, txn.readers.OldestTxn)
-	if e != nil {
-		pointer = txn.meta.getFrontierPointer()
+func (txn medium) getNewPagePointer(size int) (pointer int) {
+	pointer = txn.meta.getFrontierPointer()
 
-		txn.meta.setFrontierPointer(pointer + size)
-	}
-
-	txn.freeSafe[pointer] = struct{}{}
+	txn.meta.setFrontierPointer(pointer + size)
 
 	return
 }

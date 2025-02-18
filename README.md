@@ -41,22 +41,23 @@ release of resources upon process termination.
 goos: linux
 goarch: arm64
 pkg: test
-BenchmarkVoidPut-2         	  131072	     14847 ns/op
-BenchmarkVoidGet-2         	  131072	      1039 ns/op
-BenchmarkVoidGetNext-2     	  131072	       237.9 ns/op
-BenchmarkLMDBPut-2         	  131072	     27340 ns/op
-BenchmarkLMDBGet-2         	  131072	      1468 ns/op
-BenchmarkLMDBGetNext-2     	  131072	       588.5 ns/op
-BenchmarkBoltPut-2         	  131072	     79425 ns/op
-BenchmarkBoltGet-2         	  131072	      2040 ns/op
-BenchmarkBoltGetNext-2     	  131072	       294.1 ns/op
-BenchmarkLevelPut-2        	  131072	     45181 ns/op
-BenchmarkLevelGet-2        	  131072	     28247 ns/op
-BenchmarkLevelGetNext-2    	  131072	      3154 ns/op
-BenchmarkBadgerPut-2       	  131072	     16632 ns/op
-BenchmarkBadgerGet-2       	  131072	     28055 ns/op
-BenchmarkBadgerGetNext-2   	  131072	     22580 ns/op
-BenchmarkNothing-2         	  131072	         0.3369 ns/op
+BenchmarkPopulateKeyVal-2   	  131072	      9722 ns/op
+BenchmarkVoidPut-2          	  131072	     14759 ns/op
+BenchmarkVoidGet-2          	  131072	      1090 ns/op
+BenchmarkVoidGetNext-2      	  131072	       245.1 ns/op
+BenchmarkLMDBPut-2          	  131072	     20035 ns/op
+BenchmarkLMDBGet-2          	  131072	      1486 ns/op
+BenchmarkLMDBGetNext-2      	  131072	       607.8 ns/op
+BenchmarkBoltPut-2          	  131072	     71735 ns/op
+BenchmarkBoltGet-2          	  131072	      2191 ns/op
+BenchmarkBoltGetNext-2      	  131072	       257.6 ns/op
+BenchmarkLevelPut-2         	  131072	     45167 ns/op
+BenchmarkLevelGet-2         	  131072	     28179 ns/op
+BenchmarkLevelGetNext-2     	  131072	      2907 ns/op
+BenchmarkBadgerPut-2        	  131072	     14138 ns/op
+BenchmarkBadgerGet-2        	  131072	     23267 ns/op
+BenchmarkBadgerGetNext-2    	  131072	     21691 ns/op
+BenchmarkNothing-2          	  131072	         0.3354 ns/op
 ```
 
 ## Getting Started
@@ -66,7 +67,7 @@ your 64-bit Linux machine.
 
 ```bash
 $ go version
-go version go1.22.3 linux/arm64
+go version go1.24.0 linux/arm64
 ```
 
 Then, import voidDB in your Go application. The following would result in the

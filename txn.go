@@ -26,8 +26,9 @@ type Txn struct {
 
 	meta     voidMeta
 	saveList map[int][]byte
-	freeList map[int][]int
-	freeSafe map[int]struct{}
+	warmList map[int]struct{}
+	freeWarm map[int][]int
+	freeCold map[int][]int
 	freeze   bool
 
 	*cursor.Cursor
@@ -183,8 +184,9 @@ func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 		write:    write,
 		sync:     sync,
 		saveList: make(map[int][]byte),
-		freeList: make(map[int][]int),
-		freeSafe: make(map[int]struct{}),
+		warmList: make(map[int]struct{}),
+		freeWarm: make(map[int][]int),
+		freeCold: make(map[int][]int),
 	}
 
 	e = txn.getMeta()
@@ -294,11 +296,15 @@ func (txn *Txn) enqueueFreeList() {
 		size int
 	)
 
-	for size = range txn.freeList {
+	for size = range txn.freeWarm {
+		txn.freeCold[size] = append(txn.freeCold[size], txn.freeWarm[size]...)
+	}
+
+	for size = range txn.freeCold {
 		txn.meta.freeQueue(size).Enqueue(
 			medium{txn, nil},
 			txn.meta.getSerialNumber(),
-			txn.freeList[size],
+			txn.freeCold[size],
 		)
 	}
 

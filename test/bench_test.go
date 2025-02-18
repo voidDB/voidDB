@@ -57,6 +57,19 @@ func populateKeyVal(n int) (e error) {
 	return
 }
 
+func BenchmarkPopulateKeyVal(b *testing.B) {
+	var (
+		e error
+	)
+
+	e = populateKeyVal(b.N)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	return
+}
+
 func BenchmarkVoidPut(b *testing.B) {
 	const (
 		mapSize = 1 << 30 // 1 GiB
@@ -79,11 +92,6 @@ func BenchmarkVoidPut(b *testing.B) {
 			return
 		}
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	path, e = os.MkdirTemp("", "")
 	if e != nil {
@@ -142,11 +150,6 @@ func BenchmarkVoidGet(b *testing.B) {
 			return
 		}
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	path, e = os.MkdirTemp("", "")
 	if e != nil {
@@ -211,11 +214,6 @@ func BenchmarkVoidGetNext(b *testing.B) {
 		}
 	)
 
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
-
 	path, e = os.MkdirTemp("", "")
 	if e != nil {
 		b.Fatal(e)
@@ -273,11 +271,6 @@ func BenchmarkLMDBPut(b *testing.B) {
 			return
 		}
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	env, e = lmdb.NewEnv()
 	if e != nil {
@@ -359,11 +352,6 @@ func BenchmarkLMDBGet(b *testing.B) {
 			return
 		}
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	env, e = lmdb.NewEnv()
 	if e != nil {
@@ -457,11 +445,6 @@ func BenchmarkLMDBGetNext(b *testing.B) {
 		}
 	)
 
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
-
 	env, e = lmdb.NewEnv()
 	if e != nil {
 		b.Fatal(e)
@@ -532,11 +515,6 @@ func BenchmarkBoltPut(b *testing.B) {
 		}
 	)
 
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
-
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
 		b.Fatal(e)
@@ -606,11 +584,6 @@ func BenchmarkBoltGet(b *testing.B) {
 			return
 		}
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
@@ -696,11 +669,6 @@ func BenchmarkBoltGetNext(b *testing.B) {
 		}
 	)
 
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
-
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
 		b.Fatal(e)
@@ -743,11 +711,6 @@ func BenchmarkLevelPut(b *testing.B) {
 		tmp string
 	)
 
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
-
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
 		b.Fatal(e)
@@ -786,11 +749,6 @@ func BenchmarkLevelGet(b *testing.B) {
 		ldb *leveldb.DB
 		tmp string
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
@@ -836,11 +794,6 @@ func BenchmarkLevelGetNext(b *testing.B) {
 		ldb *leveldb.DB
 		tmp string
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
@@ -905,11 +858,6 @@ func BenchmarkBadgerPut(b *testing.B) {
 			return
 		}
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
@@ -976,11 +924,6 @@ func BenchmarkBadgerGet(b *testing.B) {
 			return
 		}
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
@@ -1057,11 +1000,6 @@ func BenchmarkBadgerGetNext(b *testing.B) {
 			return
 		}
 	)
-
-	e = populateKeyVal(b.N)
-	if e != nil {
-		b.Fatal(e)
-	}
 
 	tmp, e = os.MkdirTemp("", "")
 	if e != nil {
