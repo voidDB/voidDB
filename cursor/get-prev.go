@@ -1,6 +1,8 @@
 package cursor
 
 import (
+	"errors"
+
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/node"
 )
@@ -12,9 +14,17 @@ import (
 func (cursor *Cursor) GetPrev() (key, value []byte, e error) {
 	cursor.resume()
 
-	cursor.index--
+	for {
+		cursor.index--
 
-	return cursor.getPrev()
+		key, value, e = cursor.getPrev()
+
+		if !errors.Is(e, common.ErrorDeleted) {
+			break
+		}
+	}
+
+	return
 }
 
 func (cursor *Cursor) getPrev() (key, value []byte, e error) {
@@ -53,7 +63,7 @@ func (cursor *Cursor) getPrev() (key, value []byte, e error) {
 
 	switch {
 	case pointer == tombstone:
-		fallthrough
+		return nil, nil, common.ErrorDeleted
 
 	case pointer == 0:
 		cursor.index--

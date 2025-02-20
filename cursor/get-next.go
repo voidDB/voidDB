@@ -1,6 +1,8 @@
 package cursor
 
 import (
+	"errors"
+
 	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/node"
 )
@@ -13,9 +15,17 @@ import (
 func (cursor *Cursor) GetNext() (key, value []byte, e error) {
 	cursor.resume()
 
-	cursor.index++
+	for {
+		cursor.index++
 
-	return cursor.getNext()
+		key, value, e = cursor.getNext()
+
+		if !errors.Is(e, common.ErrorDeleted) {
+			break
+		}
+	}
+
+	return
 }
 
 func (cursor *Cursor) getNext() (key, value []byte, e error) {
@@ -38,9 +48,7 @@ func (cursor *Cursor) getNext() (key, value []byte, e error) {
 
 	switch {
 	case pointer == tombstone:
-		cursor.index++
-
-		return cursor.getNext()
+		return nil, nil, common.ErrorDeleted
 
 	case length > 0:
 		key = curNode.Key(cursor.index)
