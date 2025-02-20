@@ -52,7 +52,10 @@ func (cursor *Cursor) getPrev() (key, value []byte, e error) {
 	pointer, length = curNode.ValueOrChild(cursor.index)
 
 	switch {
-	case pointer == 0 || pointer == tombstone:
+	case pointer == tombstone:
+		fallthrough
+
+	case pointer == 0:
 		cursor.index--
 
 		return cursor.getPrev()

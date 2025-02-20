@@ -7,7 +7,15 @@ func (node Node) Update(index, pointer, length int, metadata []byte) (
 
 	copy(newNode, node)
 
-	newNode.setValueOrChild(index, pointer, length, metadata)
+	switch {
+	case length < 0:
+		newNode.elem(index).setPointer(pointer)
+
+		newNode.elem(index).setExtraMetadata(metadata)
+
+	default:
+		newNode.setValueOrChild(index, pointer, length, metadata)
+	}
 
 	return
 }

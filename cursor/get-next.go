@@ -37,17 +37,17 @@ func (cursor *Cursor) getNext() (key, value []byte, e error) {
 	pointer, length = curNode.ValueOrChild(cursor.index)
 
 	switch {
+	case pointer == tombstone:
+		cursor.index++
+
+		return cursor.getNext()
+
 	case length > 0:
 		key = curNode.Key(cursor.index)
 
 		value = cursor.medium.Load(pointer, length)
 
 		return
-
-	case pointer == tombstone:
-		cursor.index++
-
-		return cursor.getNext()
 
 	case pointer > 0:
 		cursor.stack = append(cursor.stack,

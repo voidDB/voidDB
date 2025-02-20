@@ -293,3 +293,12 @@ Feature: Cursor
     Then getting next using "cursor" in reverse should not find
     When I put "key00", "VALUE00" using "cursor"
     Then I should get "key00", "VALUE00" using "cursor"
+    Then I should get "key01", "value01" next using "cursor"
+    Then I should get "key02", "value02" next using "cursor"
+    Then I should get "key04", "value04" next using "cursor"
+    Then I should get "key05", "value05" next using "cursor"
+    Then I should get "key06", "value06" next using "cursor"
+    Then I should get "key07", "value07" next using "cursor"
+    Then I should get "key08", "value08" next using "cursor"
+    Then I should get "key09", "VALUE09" next using "cursor"
+    Then getting next using "cursor" should not find

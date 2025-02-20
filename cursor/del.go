@@ -34,7 +34,7 @@ func (cursor *Cursor) del() (e error) {
 		oldNode.ValueOrChild(cursor.index),
 	)
 
-	newNode = oldNode.Update(cursor.index, tombstone, 0,
+	newNode = oldNode.Update(cursor.index, tombstone, -1,
 		cursor.medium.Meta(),
 	)
 
