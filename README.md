@@ -94,11 +94,11 @@ func main() {
 
 	void, err := voidDB.NewVoid(path, capacity)
 
-	if errors.Is(err, os.ErrExist) {
+	switch {
+	case errors.Is(err, os.ErrExist):
 		void, err = voidDB.OpenVoid(path, capacity)
-	}
 
-	if err != nil {
+	case err != nil:
 		panic(err)
 	}
 
@@ -114,13 +114,11 @@ set to true if even the slightest risk of losing those changes is a concern.
 mustSync := true
 
 err = void.Update(mustSync,
-	func(txn *voidDB.Txn) (err error) {
-		err = txn.Put(
+	func(txn *voidDB.Txn) error {
+		return txn.Put(
 			[]byte("greeting"),
 			[]byte("Hello, World!"),
 		)
-
-		return
 	},
 )
 if err != nil {
@@ -133,35 +131,25 @@ different values to the same key so long as they reside in separate keyspaces.
 The transaction handle doubles as a cursor in the default keyspace.
 
 ```go
-cur0, err := txn.OpenCursor(
-	[]byte("hello"),
-)
+cur0, _ := txn.OpenCursor([]byte("hello"))
 
-err = cur0.Put(
-	[]byte("greeting"),
+cur0.Put([]byte("greeting"),
 	[]byte("Hello, World!"),
 )
 
-cur1, err := txn.OpenCursor(
-	[]byte("goodbye"),
-)
+cur1, _ := txn.OpenCursor([]byte("goodbye"))
 
-err = cur1.Put(
-	[]byte("greeting"),
+cur1.Put([]byte("greeting"),
 	[]byte("さらばこの世、わらわはもう寝るぞよ。"),
 )
 
-val, err := cur0.Get(
-	[]byte("greeting"),
-)
+if val, err := cur0.Get([]byte("greeting")); err == nil {
+	log.Printf("%s", val) // Hello, World!
+}
 
-log.Printf("%s", val) // Hello, World!
-
-val, err = cur1.Get(
-	[]byte("greeting"),
-)
-
-log.Printf("%s", val) // さらばこの世、わらわはもう寝るぞよ。
+if val, err := cur1.Get([]byte("greeting")); err == nil {
+	log.Printf("%s", val) // さらばこの世、わらわはもう寝るぞよ。
+}
 ```
 
 To iterate over a keyspace, use `*cursor.Cursor.GetNext`/`GetPrev`. Position

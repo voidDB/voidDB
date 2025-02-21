@@ -62,6 +62,9 @@ func (cursor *Cursor) getPrev() (key, value []byte, e error) {
 	pointer, length = curNode.ValueOrChild(cursor.index)
 
 	switch {
+	case pointer&graveyard > 0:
+		fallthrough
+
 	case pointer == tombstone:
 		return nil, nil, common.ErrorDeleted
 

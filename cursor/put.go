@@ -90,6 +90,8 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte) (
 
 	index, pointer, length = oldNode.Search(key)
 
+	pointer &^= graveyard
+
 	switch {
 	case pointer == 0:
 		newNode0, newNode1, promoted = oldNode.Insert(index,
@@ -131,8 +133,18 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte) (
 
 	pointer0 = medium.Save(newNode0)
 
-	if newNode1 != nil {
-		pointer1 = medium.Save(newNode1)
+	if isGraveyard(newNode0) {
+		pointer0 |= graveyard
+	}
+
+	if newNode1 == nil {
+		return
+	}
+
+	pointer1 = medium.Save(newNode1)
+
+	if isGraveyard(newNode1) {
+		pointer1 |= graveyard
 	}
 
 	return

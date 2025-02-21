@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	tombstone = 1 // Pointers are multiples of PageSize,
-	// hence the least significant 11 bits are free to mean other things.
+	tombstone = 1 // HACK: Pointers are multiples of common.PageSize, hence the
+	graveyard = 2 // least significant 11 bits are free to mean other things.
 )
 
 // Del deletes the key-value record indexed by the cursor. To delete a record
@@ -20,8 +20,8 @@ func (cursor *Cursor) Del() (e error) {
 func (cursor *Cursor) del() (e error) {
 	var (
 		i       int
-		oldNode node.Node
 		newNode node.Node
+		oldNode node.Node
 		pointer int
 	)
 
@@ -48,6 +48,10 @@ func (cursor *Cursor) del() (e error) {
 			return
 		}
 
+		if isGraveyard(newNode) {
+			pointer |= graveyard
+		}
+
 		newNode = oldNode.Update(cursor.stack[i].index, pointer, 0,
 			cursor.medium.Meta(),
 		)
@@ -58,4 +62,31 @@ func (cursor *Cursor) del() (e error) {
 	}
 
 	return
+}
+
+func isGraveyard(n node.Node) bool {
+	var (
+		index   int
+		pointer int
+	)
+
+	for index = 0; index <= n.Length(); index++ {
+		pointer, _ = n.ValueOrChild(index)
+
+		switch {
+		case pointer&graveyard > 0:
+			continue
+
+		case pointer == tombstone:
+			continue
+
+		case pointer == 0 && index == n.Length():
+			continue
+
+		default:
+			return false
+		}
+	}
+
+	return true
 }

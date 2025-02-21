@@ -43,7 +43,7 @@ func (cursor *Cursor) GetLast() (key, value []byte, e error) {
 
 	cursor.index = node.MaxNodeLength
 
-	return cursor.getPrev()
+	return cursor.GetPrev()
 }
 
 func (cursor *Cursor) get(key []byte) (value []byte, e error) {
@@ -61,6 +61,9 @@ func (cursor *Cursor) get(key []byte) (value []byte, e error) {
 	cursor.index, pointer, length = curNode.Search(key)
 
 	switch {
+	case pointer&graveyard > 0:
+		fallthrough
+
 	case pointer == tombstone:
 		fallthrough
 
