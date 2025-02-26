@@ -14,16 +14,20 @@ const (
 func (cursor *Cursor) Del() (e error) {
 	cursor.resume()
 
-	return cursor.del()
+	return cursor.del(nil)
 }
 
-func (cursor *Cursor) del() (e error) {
+func (cursor *Cursor) del(leafMeta []byte) (e error) {
 	var (
 		i       int
 		newNode node.Node
 		oldNode node.Node
 		pointer int
 	)
+
+	if leafMeta == nil {
+		leafMeta = cursor.medium.Meta()
+	}
 
 	oldNode, e = getNode(cursor.medium, cursor.offset, true)
 	if e != nil {
@@ -34,9 +38,7 @@ func (cursor *Cursor) del() (e error) {
 		oldNode.ValueOrChild(cursor.index),
 	)
 
-	newNode = oldNode.Update(cursor.index, tombstone, -1,
-		cursor.medium.Meta(),
-	)
+	newNode = oldNode.Update(cursor.index, tombstone, -1, leafMeta)
 
 	pointer = cursor.medium.Save(newNode)
 

@@ -20,6 +20,10 @@ const (
 // CAUTION: The data in value must not be modified until the transaction has
 // been successfully committed.
 func (cursor *Cursor) Put(key, value []byte) (e error) {
+	return cursor.put(key, value, nil)
+}
+
+func (cursor *Cursor) put(key, value, leafMeta []byte) (e error) {
 	var (
 		newRoot  node.Node
 		pointer0 int
@@ -43,10 +47,12 @@ func (cursor *Cursor) Put(key, value []byte) (e error) {
 
 	cursor.reset()
 
+	if leafMeta == nil {
+		leafMeta = cursor.medium.Meta()
+	}
+
 	pointer0, pointer1, promoted, e = put(cursor.medium, cursor.offset,
-		cursor.medium.Save(value),
-		len(value),
-		key,
+		cursor.medium.Save(value), len(value), key, leafMeta,
 	)
 	if e != nil {
 		return
@@ -70,7 +76,8 @@ func (cursor *Cursor) Put(key, value []byte) (e error) {
 	return
 }
 
-func put(medium Medium, offset, putPointer, putLength int, key []byte) (
+func put(medium Medium, offset, putPointer, putLength int, key, leafMeta []byte,
+) (
 	pointer0, pointer1 int, promoted []byte, e error,
 ) {
 	var (
@@ -95,7 +102,7 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte) (
 	switch {
 	case pointer == 0:
 		newNode0, newNode1, promoted = oldNode.Insert(index,
-			putPointer, 0, putLength, key, medium.Meta(),
+			putPointer, 0, putLength, key, leafMeta,
 		)
 
 	case length > 0:
@@ -104,13 +111,11 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte) (
 		fallthrough
 
 	case pointer == tombstone:
-		newNode0 = oldNode.Update(index, putPointer, putLength,
-			medium.Meta(),
-		)
+		newNode0 = oldNode.Update(index, putPointer, putLength, leafMeta)
 
 	default:
 		pointer0, pointer1, promoted, e = put(medium, pointer,
-			putPointer, putLength, key,
+			putPointer, putLength, key, leafMeta,
 		)
 		if e != nil {
 			return
@@ -118,8 +123,8 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte) (
 
 		switch {
 		case pointer1 == 0:
-			newNode0 = oldNode.Update(index, pointer0, 0,
-				medium.Meta(),
+			newNode0 = oldNode.Update(index,
+				pointer0, 0, medium.Meta(),
 			)
 
 		default:
@@ -133,12 +138,12 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte) (
 
 	pointer0 = medium.Save(newNode0)
 
-	if isGraveyard(newNode0) {
-		pointer0 |= graveyard
-	}
-
 	if newNode1 == nil {
 		return
+	}
+
+	if isGraveyard(newNode0) {
+		pointer0 |= graveyard
 	}
 
 	pointer1 = medium.Save(newNode1)

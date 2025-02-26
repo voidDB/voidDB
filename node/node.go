@@ -57,6 +57,10 @@ func (node Node) ValueOrChild(index int) (pointer, length int) {
 	return elem.getPointer(), elem.getValLen()
 }
 
+func (node Node) ValueOrChildMetadata(index int) (metadata []byte) {
+	return node.elem(index).extraMetadata()
+}
+
 func (node Node) setValueOrChild(index, pointer, length int, metadata []byte) {
 	var elem Elem = node.elem(index)
 

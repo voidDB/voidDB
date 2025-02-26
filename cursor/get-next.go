@@ -85,3 +85,72 @@ end:
 
 	return
 }
+
+func (cursor *Cursor) getNextWithLeafMeta() (
+	key, value, leafMeta []byte, e error,
+) {
+	var (
+		curNode node.Node
+		length  int
+		pointer int
+	)
+
+	cursor.index++
+
+	if cursor.index >= node.MaxNodeLength {
+		goto end
+	}
+
+	curNode, e = getNode(cursor.medium, cursor.offset, false)
+	if e != nil {
+		return
+	}
+
+	pointer, length = curNode.ValueOrChild(cursor.index)
+
+	pointer &^= graveyard
+
+	switch {
+	case pointer == tombstone:
+		e = common.ErrorDeleted
+
+		fallthrough
+
+	case length > 0:
+		key = curNode.Key(cursor.index)
+
+		leafMeta = curNode.ValueOrChildMetadata(cursor.index)
+
+		if e != nil {
+			return
+		}
+
+		value = cursor.medium.Load(pointer, length)
+
+		return
+
+	case pointer > 0:
+		cursor.stack = append(cursor.stack,
+			ancestor{cursor.offset, cursor.index},
+		)
+
+		cursor.offset, cursor.index = pointer, 0
+
+		return cursor.getNextWithLeafMeta()
+	}
+
+end:
+	if len(cursor.stack) > 0 {
+		cursor.offset, cursor.index =
+			cursor.stack[len(cursor.stack)-1].offset,
+			cursor.stack[len(cursor.stack)-1].index+1
+
+		cursor.stack = cursor.stack[:len(cursor.stack)-1]
+
+		return cursor.getNextWithLeafMeta()
+	}
+
+	e = common.ErrorNotFound
+
+	return
+}

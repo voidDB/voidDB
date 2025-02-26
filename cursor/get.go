@@ -82,3 +82,50 @@ func (cursor *Cursor) get(key []byte) (value []byte, e error) {
 
 	return cursor.get(key)
 }
+
+func (cursor *Cursor) getLeafMetaReset(key []byte) (leafMeta []byte, e error) {
+	cursor.reset()
+
+	return cursor.getLeafMeta(key)
+}
+
+func (cursor *Cursor) getLeafMeta(key []byte) (leafMeta []byte, e error) {
+	var (
+		curNode node.Node
+		length  int
+		pointer int
+	)
+
+	curNode, e = getNode(cursor.medium, cursor.offset, false)
+	if e != nil {
+		return
+	}
+
+	cursor.index, pointer, length = curNode.Search(key)
+
+	switch {
+	case pointer&graveyard > 0:
+		break
+
+	case pointer == tombstone:
+		e = common.ErrorDeleted
+
+		fallthrough
+
+	case length > 0:
+		leafMeta = curNode.ValueOrChildMetadata(cursor.index)
+
+		return
+
+	case pointer == 0:
+		return nil, common.ErrorNotFound
+	}
+
+	cursor.stack = append(cursor.stack,
+		ancestor{cursor.offset, cursor.index},
+	)
+
+	cursor.offset = pointer &^ graveyard
+
+	return cursor.getLeafMeta(key)
+}

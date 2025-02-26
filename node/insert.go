@@ -11,14 +11,12 @@ func (node Node) Insert(
 
 	newNode = NewNode()
 
-	for i = 0; i < node.Length(); i++ {
-		switch {
-		case i < index:
-			copyElemKey(newNode, node, i, 0)
+	for i = 0; i < index; i++ {
+		copyElemKey(newNode, node, i, 0)
+	}
 
-		default:
-			copyElemKey(newNode, node, i, 1)
-		}
+	for i = i; i < node.Length(); i++ {
+		copyElemKey(newNode, node, i, 1)
 	}
 
 	copyElem(newNode, node, i, 1)
