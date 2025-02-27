@@ -2,6 +2,7 @@ package cursor
 
 import (
 	"github.com/voidDB/voidDB/common"
+	"github.com/voidDB/voidDB/link"
 	"github.com/voidDB/voidDB/node"
 )
 
@@ -83,13 +84,17 @@ func (cursor *Cursor) get(key []byte) (value []byte, e error) {
 	return cursor.get(key)
 }
 
-func (cursor *Cursor) getLeafMetaReset(key []byte) (leafMeta []byte, e error) {
+func (cursor *Cursor) getLeafMetaReset(key []byte) (
+	linkMeta link.Metadata, e error,
+) {
 	cursor.reset()
 
 	return cursor.getLeafMeta(key)
 }
 
-func (cursor *Cursor) getLeafMeta(key []byte) (leafMeta []byte, e error) {
+func (cursor *Cursor) getLeafMeta(key []byte) (
+	linkMeta link.Metadata, e error,
+) {
 	var (
 		curNode node.Node
 		length  int
@@ -113,7 +118,7 @@ func (cursor *Cursor) getLeafMeta(key []byte) (leafMeta []byte, e error) {
 		fallthrough
 
 	case length > 0:
-		leafMeta = curNode.ValueOrChildMetadata(cursor.index)
+		linkMeta = curNode.ValueOrChildLinkMetadata(cursor.index)
 
 		return
 

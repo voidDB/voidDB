@@ -1,7 +1,11 @@
 package node
 
+import (
+	"github.com/voidDB/voidDB/link"
+)
+
 func (node Node) Insert(
-	index, pointerL, pointerR, length int, key, metadata []byte,
+	index, pointerL, pointerR, length int, key, metadata link.Metadata,
 ) (
 	newNode, _ Node, _ []byte,
 ) {

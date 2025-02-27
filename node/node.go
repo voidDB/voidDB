@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/voidDB/voidDB/common"
+	"github.com/voidDB/voidDB/link"
 )
 
 const (
@@ -57,18 +58,20 @@ func (node Node) ValueOrChild(index int) (pointer, length int) {
 	return elem.getPointer(), elem.getValLen()
 }
 
-func (node Node) ValueOrChildMetadata(index int) (metadata []byte) {
-	return node.elem(index).extraMetadata()
+func (node Node) ValueOrChildLinkMetadata(index int) (metadata link.Metadata) {
+	return node.elem(index).linkMetadata()
 }
 
-func (node Node) setValueOrChild(index, pointer, length int, metadata []byte) {
+func (node Node) setValueOrChild(
+	index, pointer, length int, metadata link.Metadata,
+) {
 	var elem Elem = node.elem(index)
 
 	elem.setPointer(pointer)
 
 	elem.setValLen(length)
 
-	elem.setExtraMetadata(metadata)
+	elem.setLinkMetadata(metadata)
 
 	return
 }

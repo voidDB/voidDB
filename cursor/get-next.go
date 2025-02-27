@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/voidDB/voidDB/common"
+	"github.com/voidDB/voidDB/link"
 	"github.com/voidDB/voidDB/node"
 )
 
@@ -86,8 +87,8 @@ end:
 	return
 }
 
-func (cursor *Cursor) getNextWithLeafMeta() (
-	key, value, leafMeta []byte, e error,
+func (cursor *Cursor) getNextWithLeafMeta(minTxnID int) (
+	key, value []byte, linkMeta link.Metadata, e error,
 ) {
 	var (
 		curNode node.Node
@@ -106,6 +107,12 @@ func (cursor *Cursor) getNextWithLeafMeta() (
 		return
 	}
 
+	linkMeta = curNode.ValueOrChildLinkMetadata(cursor.index)
+
+	if linkMeta.TxnSerial().Int() < minTxnID {
+		return cursor.getNextWithLeafMeta(minTxnID)
+	}
+
 	pointer, length = curNode.ValueOrChild(cursor.index)
 
 	pointer &^= graveyard
@@ -119,13 +126,9 @@ func (cursor *Cursor) getNextWithLeafMeta() (
 	case length > 0:
 		key = curNode.Key(cursor.index)
 
-		leafMeta = curNode.ValueOrChildMetadata(cursor.index)
-
-		if e != nil {
-			return
+		if e == nil {
+			value = cursor.medium.Load(pointer, length)
 		}
-
-		value = cursor.medium.Load(pointer, length)
 
 		return
 
@@ -136,7 +139,7 @@ func (cursor *Cursor) getNextWithLeafMeta() (
 
 		cursor.offset, cursor.index = pointer, 0
 
-		return cursor.getNextWithLeafMeta()
+		return cursor.getNextWithLeafMeta(minTxnID)
 	}
 
 end:
@@ -147,7 +150,7 @@ end:
 
 		cursor.stack = cursor.stack[:len(cursor.stack)-1]
 
-		return cursor.getNextWithLeafMeta()
+		return cursor.getNextWithLeafMeta(minTxnID)
 	}
 
 	e = common.ErrorNotFound

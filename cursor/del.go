@@ -1,6 +1,7 @@
 package cursor
 
 import (
+	"github.com/voidDB/voidDB/link"
 	"github.com/voidDB/voidDB/node"
 )
 
@@ -17,7 +18,7 @@ func (cursor *Cursor) Del() (e error) {
 	return cursor.del(nil)
 }
 
-func (cursor *Cursor) del(leafMeta []byte) (e error) {
+func (cursor *Cursor) del(linkMeta link.Metadata) (e error) {
 	var (
 		i       int
 		newNode node.Node
@@ -25,8 +26,8 @@ func (cursor *Cursor) del(leafMeta []byte) (e error) {
 		pointer int
 	)
 
-	if leafMeta == nil {
-		leafMeta = cursor.medium.Meta()
+	if linkMeta == nil {
+		linkMeta = cursor.medium.Meta()
 	}
 
 	oldNode, e = getNode(cursor.medium, cursor.offset, true)
@@ -38,7 +39,7 @@ func (cursor *Cursor) del(leafMeta []byte) (e error) {
 		oldNode.ValueOrChild(cursor.index),
 	)
 
-	newNode = oldNode.Update(cursor.index, tombstone, -1, leafMeta)
+	newNode = oldNode.Update(cursor.index, tombstone, -1, linkMeta)
 
 	pointer = cursor.medium.Save(newNode)
 

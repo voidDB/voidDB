@@ -46,16 +46,3 @@ func (meta Meta) setLength(length int) {
 
 	return
 }
-
-func (meta Meta) extraMetadata() []byte {
-	return common.Field(meta, 2*wordSize, 6*wordSize)
-}
-
-func (meta Meta) setExtraMetadata(metadata []byte) {
-	copy(
-		meta.extraMetadata(),
-		metadata,
-	)
-
-	return
-}

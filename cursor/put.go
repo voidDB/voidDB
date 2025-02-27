@@ -4,6 +4,7 @@ import (
 	"math"
 	"syscall"
 
+	"github.com/voidDB/voidDB/link"
 	"github.com/voidDB/voidDB/node"
 )
 
@@ -23,7 +24,7 @@ func (cursor *Cursor) Put(key, value []byte) (e error) {
 	return cursor.put(key, value, nil)
 }
 
-func (cursor *Cursor) put(key, value, leafMeta []byte) (e error) {
+func (cursor *Cursor) put(key, value, linkMeta link.Metadata) (e error) {
 	var (
 		newRoot  node.Node
 		pointer0 int
@@ -47,12 +48,12 @@ func (cursor *Cursor) put(key, value, leafMeta []byte) (e error) {
 
 	cursor.reset()
 
-	if leafMeta == nil {
-		leafMeta = cursor.medium.Meta()
+	if linkMeta == nil {
+		linkMeta = cursor.medium.Meta()
 	}
 
 	pointer0, pointer1, promoted, e = put(cursor.medium, cursor.offset,
-		cursor.medium.Save(value), len(value), key, leafMeta,
+		cursor.medium.Save(value), len(value), key, linkMeta,
 	)
 	if e != nil {
 		return
@@ -76,7 +77,8 @@ func (cursor *Cursor) put(key, value, leafMeta []byte) (e error) {
 	return
 }
 
-func put(medium Medium, offset, putPointer, putLength int, key, leafMeta []byte,
+func put(medium Medium, offset, putPointer, putLength int, key []byte,
+	linkMeta link.Metadata,
 ) (
 	pointer0, pointer1 int, promoted []byte, e error,
 ) {
@@ -102,7 +104,7 @@ func put(medium Medium, offset, putPointer, putLength int, key, leafMeta []byte,
 	switch {
 	case pointer == 0:
 		newNode0, newNode1, promoted = oldNode.Insert(index,
-			putPointer, 0, putLength, key, leafMeta,
+			putPointer, 0, putLength, key, linkMeta,
 		)
 
 	case length > 0:
@@ -111,11 +113,11 @@ func put(medium Medium, offset, putPointer, putLength int, key, leafMeta []byte,
 		fallthrough
 
 	case pointer == tombstone:
-		newNode0 = oldNode.Update(index, putPointer, putLength, leafMeta)
+		newNode0 = oldNode.Update(index, putPointer, putLength, linkMeta)
 
 	default:
 		pointer0, pointer1, promoted, e = put(medium, pointer,
-			putPointer, putLength, key, leafMeta,
+			putPointer, putLength, key, linkMeta,
 		)
 		if e != nil {
 			return

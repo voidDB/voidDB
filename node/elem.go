@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/voidDB/voidDB/common"
+	"github.com/voidDB/voidDB/link"
 )
 
 type Elem []byte
@@ -63,13 +64,13 @@ func (elem Elem) setPointer(pointer int) {
 	return
 }
 
-func (elem Elem) extraMetadata() []byte {
-	return common.Field(elem, 2*wordSize, 6*wordSize)
+func (elem Elem) linkMetadata() link.Metadata {
+	return common.Field(elem, 2*wordSize, 2*wordSize)
 }
 
-func (elem Elem) setExtraMetadata(metadata []byte) {
+func (elem Elem) setLinkMetadata(metadata link.Metadata) {
 	copy(
-		elem.extraMetadata(),
+		elem.linkMetadata(),
 		metadata,
 	)
 
