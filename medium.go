@@ -36,17 +36,13 @@ func (txn medium) Save(data []byte) (pointer int) {
 		)
 	)
 
-	switch txn.freeze {
-	case true:
-		pointer = txn.getNewPagePointer(length)
-
-	default:
-		pointer = txn.getFreePagePointer(length)
-
-		txn.setRootNodePointer(txn.keyspace, pointer)
-	}
+	pointer = txn.getFreePagePointer(length)
 
 	txn.saveList[pointer] = data
+
+	if !txn.freeze {
+		txn.setRootNodePointer(txn.keyspace, pointer)
+	}
 
 	return
 }
@@ -59,17 +55,17 @@ func (txn medium) SaveAt(offset int, data []byte) {
 
 func (txn medium) Free(offset, length int) {
 	var (
-		warm bool
+		cool bool
 	)
 
 	length = align(length)
 
-	switch _, warm = txn.warmList[offset]; warm {
+	switch _, cool = txn.coolList[offset]; cool || txn.freeze {
 	case true:
-		txn.freeWarm[length] = append(txn.freeWarm[length], offset)
+		txn.freeCool[length] = append(txn.freeCool[length], offset)
 
 	default:
-		txn.freeCold[length] = append(txn.freeCold[length], offset)
+		txn.freeWarm[length] = append(txn.freeWarm[length], offset)
 	}
 
 	delete(txn.saveList, offset)
@@ -82,43 +78,49 @@ func (txn medium) getFreePagePointer(size int) (pointer int) {
 		e error
 	)
 
-	pointer = txn.getFreePageWarm(size)
+	if !txn.freeze {
+		pointer = txn.getFreePageCool(size)
 
-	if pointer > 0 {
-		return
+		if pointer > 0 {
+			return
+		}
 	}
 
-	pointer, e = txn.getFreePageCold(size)
+	pointer, e = txn.getFreePageOld(size)
 
 	if e != nil {
-		pointer = txn.getNewPagePointer(size)
+		pointer = txn.getFreePageNew(size)
 	}
 
-	txn.warmList[pointer] = struct{}{}
+	txn.coolList[pointer] = struct{}{}
 
 	return
 }
 
-func (txn medium) getFreePageWarm(size int) (pointer int) {
+func (txn medium) getFreePageCool(size int) (pointer int) {
 	var (
 		available bool
 		pointers  []int
 	)
 
-	pointers, available = txn.freeWarm[size]
+	pointers, available = txn.freeCool[size]
 
-	if !available || len(pointers) == 0 {
-		return
+	if !available {
+		return -pageSize
 	}
 
 	pointer = pointers[0]
 
-	txn.freeWarm[size] = pointers[1:]
+	txn.freeCool[size] = pointers[1:]
+
+	if len(txn.freeCool[size]) == 0 {
+		delete(txn.freeCool, size)
+	}
 
 	return
 }
 
-func (txn medium) getFreePageCold(size int) (pointer int, e error) {
+func (txn medium) getFreePageOld(size int) (pointer int, e error) {
 	var (
 		queue fifo.FIFO = txn.meta.freeQueue(size)
 	)
@@ -126,7 +128,7 @@ func (txn medium) getFreePageCold(size int) (pointer int, e error) {
 	return queue.Dequeue(txn, txn.readers.OldestTxn)
 }
 
-func (txn medium) getNewPagePointer(size int) (pointer int) {
+func (txn medium) getFreePageNew(size int) (pointer int) {
 	pointer = txn.meta.getFrontierPointer()
 
 	txn.meta.setFrontierPointer(pointer + size)

@@ -22,13 +22,14 @@ type Txn struct {
 
 	read  readFunc
 	write writeFunc
+	punch punchFunc
 	sync  syncFunc
 
 	meta     voidMeta
 	saveList map[int][]byte
-	warmList map[int]struct{}
 	freeWarm map[int][]int
-	freeCold map[int][]int
+	freeCool map[int][]int
+	coolList map[int]struct{}
 	freeze   bool
 
 	*cursor.Cursor
@@ -176,17 +177,20 @@ func (txn *Txn) Commit() (e error) {
 	return
 }
 
-func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
+func newTxn(path string, read readFunc, write writeFunc,
+	punch punchFunc, seek seekFunc, sync syncFunc,
+) (
 	txn *Txn, e error,
 ) {
 	txn = &Txn{
 		read:     read,
 		write:    write,
+		punch:    punch,
 		sync:     sync,
 		saveList: make(map[int][]byte),
-		warmList: make(map[int]struct{}),
 		freeWarm: make(map[int][]int),
-		freeCold: make(map[int][]int),
+		freeCool: make(map[int][]int),
+		coolList: make(map[int]struct{}),
 	}
 
 	e = txn.getMeta()
@@ -229,6 +233,10 @@ func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 		if e != nil {
 			return
 		}
+	}
+
+	if seek != nil {
+		txn.uncoverHoles(seek)
 	}
 
 	txn.Cursor = cursor.NewCursor(medium{txn, nil},
@@ -293,19 +301,48 @@ func (txn *Txn) putMeta() error {
 
 func (txn *Txn) enqueueFreeList() {
 	var (
-		size int
+		pointer int
+		size    int
 	)
 
 	for size = range txn.freeWarm {
-		txn.freeCold[size] = append(txn.freeCold[size], txn.freeWarm[size]...)
-	}
-
-	for size = range txn.freeCold {
 		txn.meta.freeQueue(size).Enqueue(
 			medium{txn, nil},
 			txn.meta.getSerialNumber(),
-			txn.freeCold[size],
+			txn.freeWarm[size],
 		)
+	}
+
+	for size = range txn.freeCool {
+		for _, pointer = range txn.freeCool[size] {
+			txn.punch(pointer, size)
+		}
+	}
+
+	return
+}
+
+func (txn *Txn) uncoverHoles(seek seekFunc) {
+	var (
+		e       error
+		pointer int
+	)
+
+	for {
+		pointer, e = seek(pointer)
+		if e != nil {
+			break
+		}
+
+		if pointer == txn.meta.getFrontierPointer() {
+			break
+		}
+
+		txn.freeCool[pageSize] = append(txn.freeCool[pageSize], pointer)
+
+		txn.coolList[pointer] = struct{}{}
+
+		pointer += pageSize
 	}
 
 	return
@@ -320,5 +357,9 @@ var (
 		return syscall.EACCES
 	}
 )
+
+type punchFunc func(int, int) error
+
+type seekFunc func(int) (int, error)
 
 type syncFunc func() error
