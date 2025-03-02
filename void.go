@@ -279,8 +279,9 @@ func (void *Void) punch(offset, length int) (e error) {
 	)
 }
 
-func (void *Void) seek(offset int) (pointer int, e error) {
+func (void *Void) seek(offset int) (pointer, length int, e error) {
 	const (
+		seek_data = 0x3
 		seek_hole = 0x4
 	)
 
@@ -297,6 +298,13 @@ func (void *Void) seek(offset int) (pointer int, e error) {
 	}
 
 	pointer = int(pointer64)
+
+	pointer64, e = void.file.Seek(pointer64, seek_data)
+	if e != nil {
+		return
+	}
+
+	length = int(pointer64) - pointer
 
 	return
 }

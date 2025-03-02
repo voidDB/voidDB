@@ -325,24 +325,29 @@ func (txn *Txn) enqueueFreeList() {
 func (txn *Txn) uncoverHoles(seek seekFunc) {
 	var (
 		e       error
+		length  int
 		pointer int
 	)
 
 	for {
-		pointer, e = seek(pointer)
+		pointer, length, e = seek(pointer)
+		if e != nil {
+			length = txn.meta.getFrontierPointer() - pointer
+		}
+
+		for length > 0 {
+			txn.freeCool[pageSize] = append(txn.freeCool[pageSize], pointer)
+
+			txn.coolList[pointer] = struct{}{}
+
+			pointer += pageSize
+
+			length -= pageSize
+		}
+
 		if e != nil {
 			break
 		}
-
-		if pointer == txn.meta.getFrontierPointer() {
-			break
-		}
-
-		txn.freeCool[pageSize] = append(txn.freeCool[pageSize], pointer)
-
-		txn.coolList[pointer] = struct{}{}
-
-		pointer += pageSize
 	}
 
 	return
@@ -360,6 +365,6 @@ var (
 
 type punchFunc func(int, int) error
 
-type seekFunc func(int) (int, error)
+type seekFunc func(int) (int, int, error)
 
 type syncFunc func() error
