@@ -12,7 +12,7 @@ key-value store: simultaneously in-memory and persistent on disk. An embedded
 database manager, it is meant to be integrated into application software to
 eliminate protocol overheads and achieve zero-copy performance. This library
 supplies interfaces for storage and retrieval of arbitrary bytes on 64-bit
-computers running the Linux operating system.
+computers running the Linux and macOS operating systems.
 
 voidDB features Put, Get, and Del operations as well as forward and backward
 iteration over self-sorting data in ACID (atomic, consistent, isolated, and
@@ -41,29 +41,52 @@ release of resources upon process termination.
 goos: linux
 goarch: arm64
 pkg: test
-BenchmarkPopulateKeyVal-2   	  131072	      9057 ns/op
-BenchmarkVoidPut-2          	  131072	     15000 ns/op
-BenchmarkVoidGet-2          	  131072	      1092 ns/op
-BenchmarkVoidGetNext-2      	  131072	       239.7 ns/op
-BenchmarkLMDBPut-2          	  131072	     29267 ns/op
-BenchmarkLMDBGet-2          	  131072	      1454 ns/op
-BenchmarkLMDBGetNext-2      	  131072	      1795 ns/op
-BenchmarkBoltPut-2          	  131072	     85035 ns/op
-BenchmarkBoltGet-2          	  131072	      2766 ns/op
-BenchmarkBoltGetNext-2      	  131072	      1414 ns/op
-BenchmarkLevelPut-2         	  131072	     50992 ns/op
-BenchmarkLevelGet-2         	  131072	     30834 ns/op
-BenchmarkLevelGetNext-2     	  131072	      3286 ns/op
-BenchmarkBadgerPut-2        	  131072	     28185 ns/op
-BenchmarkBadgerGet-2        	  131072	     29809 ns/op
-BenchmarkBadgerGetNext-2    	  131072	     12774 ns/op
-BenchmarkNothing-2          	  131072	         0.3239 ns/op
+BenchmarkPopulateKeyVal-2   	  131072	      9069 ns/op
+BenchmarkVoidPut-2          	  131072	     14520 ns/op
+BenchmarkVoidGet-2          	  131072	      1018 ns/op
+BenchmarkVoidGetNext-2      	  131072	       243.0 ns/op
+BenchmarkLMDBPut-2          	  131072	     24132 ns/op
+BenchmarkLMDBGet-2          	  131072	      1455 ns/op
+BenchmarkLMDBGetNext-2      	  131072	       583.5 ns/op
+BenchmarkBoltPut-2          	  131072	     75558 ns/op
+BenchmarkBoltGet-2          	  131072	      2089 ns/op
+BenchmarkBoltGetNext-2      	  131072	       243.0 ns/op
+BenchmarkLevelPut-2         	  131072	     40225 ns/op
+BenchmarkLevelGet-2         	  131072	     27412 ns/op
+BenchmarkLevelGetNext-2     	  131072	      2870 ns/op
+BenchmarkBadgerPut-2        	  131072	     15450 ns/op
+BenchmarkBadgerGet-2        	  131072	     21309 ns/op
+BenchmarkBadgerGetNext-2    	  131072	     13626 ns/op
+BenchmarkNothing-2          	  131072	         0.3249 ns/op
+```
+
+```txt
+goos: darwin
+goarch: arm64
+pkg: test
+cpu: Apple M1 Pro
+BenchmarkPopulateKeyVal-10    	  131072	      4598 ns/op
+BenchmarkVoidPut-10           	  131072	     10755 ns/op
+BenchmarkVoidGet-10           	  131072	       852.8 ns/op
+BenchmarkVoidGetNext-10       	  131072	       224.9 ns/op
+BenchmarkLMDBPut-10           	  131072	      6280 ns/op
+BenchmarkLMDBGet-10           	  131072	      1707 ns/op
+BenchmarkLMDBGetNext-10       	  131072	       754.7 ns/op
+BenchmarkBoltPut-10           	  131072	     61757 ns/op
+BenchmarkBoltGet-10           	  131072	      1807 ns/op
+BenchmarkBoltGetNext-10       	  131072	       439.5 ns/op
+BenchmarkLevelPut-10          	  131072	     97582 ns/op
+BenchmarkLevelGet-10          	  131072	     40275 ns/op
+BenchmarkLevelGetNext-10      	  131072	      3687 ns/op
+BenchmarkBadgerPut-10         	  131072	      7126 ns/op
+BenchmarkBadgerGet-10         	  131072	     13894 ns/op
+BenchmarkBadgerGetNext-10     	  131072	      2622 ns/op
+BenchmarkNothing-10           	  131072	         0.3366 ns/op
 ```
 
 ## Getting Started
 
-To begin developing with voidDB, [Install Go](https://go.dev/doc/install) on
-your 64-bit Linux machine.
+[Install Go](https://go.dev/doc/install) to begin developing with voidDB.
 
 ```bash
 $ go version
@@ -107,8 +130,8 @@ func main() {
 ```
 
 Use `*Void.View` (or `*Void.Update` only when modifying data) for convenience
-and peace of mind. Ensure all changes are safely synced to disk with mustSync
-set to true if even the slightest risk of losing those changes is a concern.
+and peace of mind. Ensure all changes are safely synced to disk with `mustSync`
+set to `true` if even the slightest risk of losing those changes is a concern.
 
 ```go
 mustSync := true

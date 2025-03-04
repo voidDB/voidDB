@@ -23,10 +23,15 @@ func (fifo FIFO) Dequeue(medium Medium, txnIDCeiling int) (
 	case free.getTxnID() >= txnIDCeiling:
 		fallthrough
 
-	case free.getLength() == 0:
+	case free.getNextPointer() == 0:
 		e = common.ErrorNotFound
 
 		return
+
+	case free.getLength() == 0:
+		e = common.ErrorNotFound
+
+		fallthrough
 
 	case index+1 == free.getLength():
 		medium.Free(offset, pageSize)

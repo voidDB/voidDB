@@ -60,7 +60,7 @@ func (txn medium) Free(offset, length int) {
 
 	length = align(length)
 
-	switch _, cool = txn.coolList[offset]; cool || txn.freeze {
+	switch _, cool = txn.coolList[offset]; cool {
 	case true:
 		txn.freeCool[length] = append(txn.freeCool[length], offset)
 
@@ -78,15 +78,13 @@ func (txn medium) getFreePagePointer(size int) (pointer int) {
 		e error
 	)
 
-	if !txn.freeze {
-		pointer = txn.getFreePageCool(size)
+	pointer = txn.getFreePageCool(size)
 
-		if pointer > 0 {
-			return
-		}
+	if pointer > 0 {
+		return
 	}
 
-	pointer, e = txn.getFreePageOld(size)
+	pointer, e = txn.getFreePageCold(size)
 
 	if e != nil {
 		pointer = txn.getFreePageNew(size)
@@ -120,7 +118,7 @@ func (txn medium) getFreePageCool(size int) (pointer int) {
 	return
 }
 
-func (txn medium) getFreePageOld(size int) (pointer int, e error) {
+func (txn medium) getFreePageCold(size int) (pointer int, e error) {
 	var (
 		queue fifo.FIFO = txn.meta.freeQueue(size)
 	)

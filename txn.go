@@ -22,7 +22,6 @@ type Txn struct {
 
 	read  readFunc
 	write writeFunc
-	punch punchFunc
 	sync  syncFunc
 
 	meta     voidMeta
@@ -146,7 +145,7 @@ func (txn *Txn) Commit() (e error) {
 
 	txn.freeze = true
 
-	txn.enqueueFreeList()
+	txn.enqueueFreeLists()
 
 	for offset, data = range txn.saveList {
 		e = txn.write(data, offset)
@@ -177,15 +176,12 @@ func (txn *Txn) Commit() (e error) {
 	return
 }
 
-func newTxn(path string, read readFunc, write writeFunc,
-	punch punchFunc, seek seekFunc, sync syncFunc,
-) (
+func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 	txn *Txn, e error,
 ) {
 	txn = &Txn{
 		read:     read,
 		write:    write,
-		punch:    punch,
 		sync:     sync,
 		saveList: make(map[int][]byte),
 		freeWarm: make(map[int][]int),
@@ -233,10 +229,6 @@ func newTxn(path string, read readFunc, write writeFunc,
 		if e != nil {
 			return
 		}
-	}
-
-	if seek != nil {
-		txn.uncoverHoles(seek)
 	}
 
 	txn.Cursor = cursor.NewCursor(medium{txn, nil},
@@ -299,10 +291,9 @@ func (txn *Txn) putMeta() error {
 	)
 }
 
-func (txn *Txn) enqueueFreeList() {
+func (txn *Txn) enqueueFreeLists() {
 	var (
-		pointer int
-		size    int
+		size int
 	)
 
 	for size = range txn.freeWarm {
@@ -310,44 +301,30 @@ func (txn *Txn) enqueueFreeList() {
 			medium{txn, nil},
 			txn.meta.getSerialNumber(),
 			txn.freeWarm[size],
+			false,
 		)
 	}
 
 	for size = range txn.freeCool {
-		for _, pointer = range txn.freeCool[size] {
-			txn.punch(pointer, size)
+		if size == pageSize {
+			continue
 		}
+
+		txn.meta.freeQueue(size).Enqueue(
+			medium{txn, nil},
+			txn.meta.getSerialNumber(),
+			txn.freeCool[size],
+			false,
+		)
 	}
 
-	return
-}
-
-func (txn *Txn) uncoverHoles(seek seekFunc) {
-	var (
-		e       error
-		length  int
-		pointer int
-	)
-
-	for {
-		pointer, length, e = seek(pointer)
-		if e != nil {
-			length = txn.meta.getFrontierPointer() - pointer
-		}
-
-		for length > 0 {
-			txn.freeCool[pageSize] = append(txn.freeCool[pageSize], pointer)
-
-			txn.coolList[pointer] = struct{}{}
-
-			pointer += pageSize
-
-			length -= pageSize
-		}
-
-		if e != nil {
-			break
-		}
+	if len(txn.freeCool[pageSize]) > 0 {
+		txn.meta.freeQueue(pageSize).Enqueue(
+			medium{txn, nil},
+			txn.meta.getSerialNumber(),
+			txn.freeCool[pageSize],
+			true,
+		)
 	}
 
 	return
@@ -362,9 +339,5 @@ var (
 		return syscall.EACCES
 	}
 )
-
-type punchFunc func(int, int) error
-
-type seekFunc func(int) (int, int, error)
 
 type syncFunc func() error

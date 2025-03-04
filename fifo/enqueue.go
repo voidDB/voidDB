@@ -1,12 +1,23 @@
 package fifo
 
-func (fifo FIFO) Enqueue(medium Medium, txnID int, pointers []int) {
+func (fifo FIFO) Enqueue(medium Medium, txnID int, pointers []int,
+	cannibalise bool,
+) {
 	var (
+		enFn enqueueFunc
 		head int
 		tail int
 	)
 
-	head, tail = enqueue(medium,
+	switch {
+	case cannibalise:
+		enFn = enqueueCannibalise
+
+	default:
+		enFn = enqueue
+	}
+
+	head, tail = enFn(medium,
 		fifo.getTailPointer(),
 		txnID,
 		pointers,
@@ -20,6 +31,8 @@ func (fifo FIFO) Enqueue(medium Medium, txnID int, pointers []int) {
 
 	return
 }
+
+type enqueueFunc func(Medium, int, int, []int) (int, int)
 
 func enqueue(medium Medium, offset, txnID int, pointers []int) (
 	head, tail int,
@@ -47,9 +60,7 @@ func enqueue(medium Medium, offset, txnID int, pointers []int) (
 	free.setLength(length)
 
 	for i = 0; i < length; i++ {
-		free.setPagePointer(i,
-			pointers[i],
-		)
+		free.setPagePointer(i, pointers[i])
 	}
 
 	head, tail = enqueue(medium, -1, txnID, pointers[length:])
@@ -63,4 +74,41 @@ func enqueue(medium Medium, offset, txnID int, pointers []int) (
 	}
 
 	return medium.Save(free), tail
+}
+
+func enqueueCannibalise(medium Medium, offset, txnID int, pointers []int) (
+	head, tail int,
+) {
+	var (
+		i      int
+		length int
+
+		free Free = NewFree(txnID)
+	)
+
+	switch {
+	case len(pointers) == 0:
+		goto end
+
+	case len(pointers) > MaxNodeLength:
+		length = MaxNodeLength
+
+	default:
+		length = len(pointers) - 1
+	}
+
+	free.setLength(length)
+
+	for i = 0; i < length; i++ {
+		free.setPagePointer(i, pointers[i])
+	}
+
+	head, tail = enqueue(medium, pointers[length], txnID, pointers[length+1:])
+
+	free.setNextPointer(head)
+
+end:
+	medium.SaveAt(offset, free)
+
+	return offset, tail
 }

@@ -101,7 +101,7 @@ func OpenVoid(path string, capacity int) (void *Void, e error) {
 		0,
 		capacity,
 		syscall.PROT_READ,
-		syscall.MAP_PRIVATE,
+		syscall.MAP_SHARED,
 	)
 	if e != nil {
 		return
@@ -187,10 +187,7 @@ func (void *Void) Update(mustSync bool, operation func(*Txn) error) (e error) {
 // OpenVoid.
 func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 	var (
-		stat os.FileInfo
-
-		punch punchFunc
-		seek  seekFunc
+		stat  os.FileInfo
 		sync  syncFunc
 		write writeFunc
 	)
@@ -207,8 +204,6 @@ func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 	if !readonly {
 		write = void.write
 
-		punch, seek = void.punch, void.seek
-
 		if mustSync {
 			sync = void.file.Sync
 		}
@@ -218,8 +213,6 @@ func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 		void.file.Name(),
 		void.read,
 		write,
-		punch,
-		seek,
 		sync,
 	)
 	if e != nil {
@@ -261,50 +254,6 @@ func (void *Void) write(data []byte, offset int) (e error) {
 	if e != nil {
 		return
 	}
-
-	return
-}
-
-func (void *Void) punch(offset, length int) (e error) {
-	const (
-		falloc_fl_keep_size  = 0x1
-		falloc_fl_punch_hole = 0x2
-	)
-
-	return syscall.Fallocate(
-		int(void.file.Fd()),
-		falloc_fl_punch_hole|falloc_fl_keep_size,
-		int64(offset),
-		int64(length),
-	)
-}
-
-func (void *Void) seek(offset int) (pointer, length int, e error) {
-	const (
-		seek_data = 0x3
-		seek_hole = 0x4
-	)
-
-	var (
-		pointer64 int64
-	)
-
-	pointer64, e = void.file.Seek(
-		int64(offset),
-		seek_hole,
-	)
-	if e != nil {
-		return
-	}
-
-	pointer = int(pointer64)
-
-	pointer64, e = void.file.Seek(pointer64, seek_data)
-	if e != nil {
-		return
-	}
-
-	length = int(pointer64) - pointer
 
 	return
 }

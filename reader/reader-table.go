@@ -13,9 +13,6 @@ const (
 	maxNReaders = 1 << 22 // maximum number of PIDs allowed on most systems
 	pathSuffix  = ".readers"
 	wordSize    = common.WordSize
-
-	f_ofd_getlk = 0x24
-	f_ofd_setlk = 0x25
 )
 
 type ReaderTable struct {
@@ -56,7 +53,7 @@ func OpenReaderTable(path string) (table *ReaderTable, e error) {
 		0,
 		maxNReaders*table.slotLength(),
 		syscall.PROT_READ,
-		syscall.MAP_PRIVATE,
+		syscall.MAP_SHARED,
 	)
 	if e != nil {
 		return
@@ -168,7 +165,7 @@ func (table *ReaderTable) lockSlot(index int) error {
 
 	return syscall.FcntlFlock(
 		table.file.Fd(),
-		f_ofd_setlk, // process-indepedent; released when file desc. closed
+		fOFDSetlk, // process-indepedent; released when file desc. closed
 		flock,
 	)
 }
@@ -184,7 +181,7 @@ func (table *ReaderTable) slotIsLocked(index int) bool {
 
 	syscall.FcntlFlock(
 		table.file.Fd(),
-		f_ofd_getlk,
+		fOFDGetlk,
 		flock,
 	)
 
