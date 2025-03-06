@@ -103,7 +103,9 @@ func enqueueCannibalise(medium Medium, offset, txnID int, pointers []int) (
 		free.setPagePointer(i, pointers[i])
 	}
 
-	head, tail = enqueue(medium, pointers[length], txnID, pointers[length+1:])
+	head, tail = enqueueCannibalise(medium, pointers[length], txnID,
+		pointers[length+1:],
+	)
 
 	free.setNextPointer(head)
 
