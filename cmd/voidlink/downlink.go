@@ -125,12 +125,9 @@ func (l *Link) deserialise() (e error) {
 	}
 
 	for {
-		select {
-		case <-l.context.Done():
-			return l.context.Err()
-
-		default:
-			break
+		e = l.context.Err()
+		if e != nil {
+			return
 		}
 
 		record.key, record.metadata, record.value, e = decoder.Decode()
@@ -189,7 +186,10 @@ func (l *Link) reconcile() (e error) {
 
 				switch {
 				case errors.Is(err, common.ErrorNotFound):
-					fallthrough
+					break
+
+				case err != nil:
+					return
 
 				case bytes.Compare(record.metadata, meta.Timestamp()) > 0:
 					break
@@ -208,6 +208,9 @@ func (l *Link) reconcile() (e error) {
 
 				default:
 					err = cur.Del(meta)
+				}
+				if err != nil {
+					return
 				}
 			}
 
