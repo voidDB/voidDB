@@ -12,7 +12,7 @@ key-value store: simultaneously in-memory and persistent on disk. An embedded
 database manager, it is meant to be integrated into application software to
 eliminate protocol overheads and achieve zero-copy performance. This library
 supplies interfaces for storage and retrieval of arbitrary bytes on 64-bit
-computers running the Linux and macOS operating systems.
+computers running Linux and macOS.
 
 voidDB features Put, Get, and Del operations as well as forward and backward
 iteration over self-sorting data in ACID (atomic, consistent, isolated, and
@@ -37,6 +37,115 @@ release of resources upon process termination.
 
 ## Benchmarks
 
+voidDB outperforms well-known key-value stores available to Go developers that
+are based on B+ trees (LMDB, bbolt) and log-structured merge(LSM)-trees
+(LevelDB, BadgerDB), in preliminary performance tests conducted on x86-64 and
+AArch64 instances.
+
+### x86-64/`amd64`
+
+#### Amazon EC2 `r6a.2xlarge`, EBS `gp3`
+
+```txt
+goos: linux
+goarch: amd64
+pkg: test
+cpu: AMD EPYC 7R13 Processor
+BenchmarkPopulateKeyVal-8   	  131072	     14407 ns/op
+BenchmarkVoidPut-8          	  131072	     49785 ns/op
+BenchmarkVoidGet-8          	  131072	      1371 ns/op
+BenchmarkVoidGetNext-8      	  131072	       444.1 ns/op
+BenchmarkLMDBPut-8          	  131072	     76957 ns/op
+BenchmarkLMDBGet-8          	  131072	      1603 ns/op
+BenchmarkLMDBGetNext-8      	  131072	       879.3 ns/op
+BenchmarkBoltPut-8          	  131072	    229226 ns/op
+BenchmarkBoltGet-8          	  131072	      2414 ns/op
+BenchmarkBoltGetNext-8      	  131072	       452.2 ns/op
+BenchmarkLevelPut-8         	  131072	    152578 ns/op
+BenchmarkLevelGet-8         	  131072	     30373 ns/op
+BenchmarkLevelGetNext-8     	  131072	      4196 ns/op
+BenchmarkBadgerPut-8        	  131072	     89332 ns/op
+BenchmarkBadgerGet-8        	  131072	     20421 ns/op
+BenchmarkBadgerGetNext-8    	  131072	      2731 ns/op
+BenchmarkNothing-8          	  131072	         0.2787 ns/op
+```
+
+> [R6a instances](https://aws.amazon.com/ec2/instance-types/r6a/) are powered
+> by 3rd generation AMD EPYC processors ... and are an ideal fit for
+> memory-intensive workloads, such as SQL and NoSQL databases; distributed web
+> scale in-memory caches, such as Memcached and Redis; in-memory databases and
+> real-time big data analytics, such as Apache Hadoop and Apache Spark
+> clusters; and other enterprise applications.
+
+#### Amazon EC2 `r7i.2xlarge`, EBS `gp3`
+
+```txt
+goos: linux
+goarch: amd64
+pkg: test
+cpu: Intel(R) Xeon(R) Platinum 8488C
+BenchmarkPopulateKeyVal-8   	  131072	     10750 ns/op
+BenchmarkVoidPut-8          	  131072	     56492 ns/op
+BenchmarkVoidGet-8          	  131072	      1227 ns/op
+BenchmarkVoidGetNext-8      	  131072	       377.2 ns/op
+BenchmarkLMDBPut-8          	  131072	     73205 ns/op
+BenchmarkLMDBGet-8          	  131072	      1563 ns/op
+BenchmarkLMDBGetNext-8      	  131072	       691.0 ns/op
+BenchmarkBoltPut-8          	  131072	    417657 ns/op
+BenchmarkBoltGet-8          	  131072	      2091 ns/op
+BenchmarkBoltGetNext-8      	  131072	       271.7 ns/op
+BenchmarkLevelPut-8         	  131072	     97302 ns/op
+BenchmarkLevelGet-8         	  131072	     28205 ns/op
+BenchmarkLevelGetNext-8     	  131072	      3799 ns/op
+BenchmarkBadgerPut-8        	  131072	     90613 ns/op
+BenchmarkBadgerGet-8        	  131072	     15375 ns/op
+BenchmarkBadgerGetNext-8    	  131072	      3033 ns/op
+BenchmarkNothing-8          	  131072	         0.3990 ns/op
+```
+
+> [R7i instances](https://aws.amazon.com/ec2/instance-types/r7i/) are ...
+> powered by custom 4th Generation Intel Xeon Scalable processors (code named
+> Sapphire Rapids) ... and ideal for all memory-intensive workloads (SQL and
+> NoSQL databases), distributed web scale in-memory caches (Memcached and
+> Redis), in-memory databases (SAP HANA), and real-time big data analytics
+> (Apache Hadoop and Apache Spark clusters).
+
+### AArch64/`arm64`
+
+#### Amazon EC2 `r8g.2xlarge`, EBS `gp3`
+
+```txt
+goos: linux
+goarch: arm64
+pkg: test
+BenchmarkPopulateKeyVal-8   	  131072	     10807 ns/op
+BenchmarkVoidPut-8          	  131072	     49006 ns/op
+BenchmarkVoidGet-8          	  131072	      1225 ns/op
+BenchmarkVoidGetNext-8      	  131072	       422.0 ns/op
+BenchmarkLMDBPut-8          	  131072	     71656 ns/op
+BenchmarkLMDBGet-8          	  131072	      1470 ns/op
+BenchmarkLMDBGetNext-8      	  131072	       749.5 ns/op
+BenchmarkBoltPut-8          	  131072	    119710 ns/op
+BenchmarkBoltGet-8          	  131072	      2158 ns/op
+BenchmarkBoltGetNext-8      	  131072	       354.1 ns/op
+BenchmarkLevelPut-8         	  131072	     77564 ns/op
+BenchmarkLevelGet-8         	  131072	     27252 ns/op
+BenchmarkLevelGetNext-8     	  131072	      3379 ns/op
+BenchmarkBadgerPut-8        	  131072	     90776 ns/op
+BenchmarkBadgerGet-8        	  131072	     15028 ns/op
+BenchmarkBadgerGetNext-8    	  131072	      1746 ns/op
+BenchmarkNothing-8          	  131072	         0.3586 ns/op
+```
+
+> [R8g instances](https://aws.amazon.com/ec2/instance-types/r8g/), powered by
+> the latest-generation AWS Graviton4 processors, ... are ideal for
+> memory-intensive workloads, such as databases, in-memory caches, and
+> real-time big data analytics.
+
+#### MacBook Pro, Apple M1 Pro chip, Apple NVMe SSD
+
+Ubuntu VM in Multipass for macOS:
+
 ```txt
 goos: linux
 goarch: arm64
@@ -59,6 +168,8 @@ BenchmarkBadgerGet-2        	  131072	     21309 ns/op
 BenchmarkBadgerGetNext-2    	  131072	     13626 ns/op
 BenchmarkNothing-2          	  131072	         0.3249 ns/op
 ```
+
+Native macOS:
 
 ```txt
 goos: darwin
