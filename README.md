@@ -261,11 +261,11 @@ func main() {
 
 	void, err := voidDB.NewVoid(path, capacity)
 
-	switch {
-	case errors.Is(err, os.ErrExist):
+	if errors.Is(err, os.ErrExist) {
 		void, err = voidDB.OpenVoid(path, capacity)
+	}
 
-	case err != nil:
+	if err != nil {
 		panic(err)
 	}
 

@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/voidDB/voidDB"
@@ -49,8 +49,8 @@ func (l *Link) download() (e error) {
 		object *minio.Object
 	)
 
-	object, e = l.client.GetObjectWithContext(l.context,
-		l.bucketName, l.objectName, minio.GetObjectOptions{},
+	object, e = l.client.GetObject(l.context, l.bucketName, l.objectName,
+		minio.GetObjectOptions{},
 	)
 	if e != nil {
 		goto bad
@@ -82,9 +82,7 @@ func (l *Link) decompress() (e error) {
 
 	e = command.Run()
 	if e != nil {
-		return fmt.Errorf("error occurred during decompression: %s",
-			e.(*exec.ExitError).Stderr,
-		)
+		return fmt.Errorf("error occurred during decompression: %w", e)
 	}
 
 	l.writer1.Close()
@@ -198,9 +196,7 @@ func (l *Link) reconcile() (e error) {
 					continue
 				}
 
-				meta = link.NewMetadata(record.metadata,
-					txn.SerialNumber(),
-				)
+				meta = link.NewMetadata(record.metadata, 0)
 
 				switch {
 				case len(record.value) > 0:

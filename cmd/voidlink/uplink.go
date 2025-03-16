@@ -8,7 +8,7 @@ import (
 	"hash/fnv"
 	"os/exec"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/voidDB/voidDB"
@@ -192,9 +192,7 @@ func (l *Link) compress() (e error) {
 
 	e = command.Run()
 	if e != nil {
-		return fmt.Errorf("error occurred during compression: %s",
-			e.(*exec.ExitError).Stderr,
-		)
+		return fmt.Errorf("error occurred during compression: %w", e)
 	}
 
 	l.writer1.Close()
@@ -207,8 +205,8 @@ func (l *Link) upload() (e error) {
 		objectSize = -1 // do multipart Put until EOF
 	)
 
-	_, e = l.client.PutObjectWithContext(l.context, l.bucketName, l.objectName,
-		l.reader1, objectSize, minio.PutObjectOptions{},
+	_, e = l.client.PutObject(l.context, l.bucketName, l.objectName, l.reader1,
+		objectSize, minio.PutObjectOptions{},
 	)
 	if e != nil {
 		return fmt.Errorf("error occurred during upload: %w", e)
