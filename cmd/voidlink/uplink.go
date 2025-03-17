@@ -26,7 +26,9 @@ func (l *Link) Uplink(ctx context.Context, bucketName, objectName string) (
 
 	l.mutex.Lock()
 
-	defer l.renew()
+	defer l.mutex.Unlock()
+
+	l.renew()
 
 	group, l.context = errgroup.WithContext(ctx)
 

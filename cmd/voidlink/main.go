@@ -84,7 +84,7 @@ func (cli *CLI) Run() (e error) {
 		cli.ObjectName = uuidv6.String()
 	}
 
-	loop = NewLoop(ctx,
+	loop = NewLoop(
 		NewLink(void, client),
 		cli.BucketName,
 		cli.ObjectName,
@@ -92,9 +92,9 @@ func (cli *CLI) Run() (e error) {
 		cli.DownlinkPeriod,
 	)
 
-	go loop.Uplink()
+	go loop.Uplink(ctx)
 
-	go loop.Downlink()
+	go loop.Downlink(ctx)
 
 	for {
 		select {

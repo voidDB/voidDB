@@ -8,7 +8,7 @@ import (
 	"test/steps"
 )
 
-func TestVoid(t *testing.T) {
+func TestVoidlink(t *testing.T) {
 	var (
 		scenarioInitializer = func(sc *godog.ScenarioContext) {
 			steps.AddStepSetUp(sc)
@@ -18,16 +18,18 @@ func TestVoid(t *testing.T) {
 			steps.AddStepBeginTxn(sc)
 			steps.AddStepOpenCursor(sc)
 			steps.AddStepGet(sc)
-			steps.AddStepGetNext(sc)
 			steps.AddStepPut(sc)
 			steps.AddStepDel(sc)
 			steps.AddStepCommitTxn(sc)
-			steps.AddStepAbortTxn(sc)
+
+			steps.AddStepNewMinioServer(sc)
+			steps.AddStepNewVoidlink(sc)
+			steps.AddStepWait(sc)
 		}
 
 		options = &godog.Options{
 			Format:   "pretty",
-			Paths:    []string{"features/void.feature"},
+			Paths:    []string{"features/voidlink.feature"},
 			TestingT: t,
 		}
 

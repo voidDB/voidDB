@@ -19,13 +19,12 @@ type Loop struct {
 	downlinkTicker *time.Ticker
 }
 
-func NewLoop(ctx context.Context, link *Link, bucketName, uploadName string,
+func NewLoop(link *Link, bucketName, uploadName string,
 	uplinkPeriod, downlinkPeriod time.Duration,
 ) (
 	loop *Loop,
 ) {
 	loop = &Loop{
-		context:        ctx,
 		link:           link,
 		bucketName:     bucketName,
 		uploadName:     uploadName,
@@ -36,7 +35,7 @@ func NewLoop(ctx context.Context, link *Link, bucketName, uploadName string,
 	return
 }
 
-func (loop *Loop) Uplink() (e error) {
+func (loop *Loop) Uplink(ctx context.Context) (e error) {
 	var (
 		txnID     int
 		txnIDLast int
@@ -50,8 +49,8 @@ func (loop *Loop) Uplink() (e error) {
 
 	for {
 		select {
-		case <-loop.context.Done():
-			return loop.context.Err()
+		case <-ctx.Done():
+			return ctx.Err()
 
 		case <-loop.uplinkTicker.C:
 			e = loop.link.void.View(getTxnID)
@@ -65,7 +64,7 @@ func (loop *Loop) Uplink() (e error) {
 				continue
 			}
 
-			e = loop.link.Uplink(loop.context, loop.bucketName, loop.uploadName)
+			e = loop.link.Uplink(ctx, loop.bucketName, loop.uploadName)
 			if e != nil {
 				log.Error().Err(e)
 
@@ -77,8 +76,9 @@ func (loop *Loop) Uplink() (e error) {
 	}
 }
 
-func (loop *Loop) Downlink() (e error) {
+func (loop *Loop) Downlink(ctx context.Context) (e error) {
 	var (
+		eTag       string
 		objectChan <-chan minio.ObjectInfo
 		objectInfo minio.ObjectInfo
 
@@ -87,16 +87,24 @@ func (loop *Loop) Downlink() (e error) {
 
 	for {
 		select {
-		case <-loop.context.Done():
-			return loop.context.Err()
+		case <-ctx.Done():
+			return ctx.Err()
 
 		case <-loop.downlinkTicker.C:
-			objectChan = loop.link.client.ListObjects(loop.context,
+			objectInfo, _ = loop.link.client.StatObject(ctx,
+				loop.bucketName, loop.uploadName, minio.StatObjectOptions{},
+			)
+
+			if objectInfo.ETag != "" {
+				objectETag[loop.uploadName] = objectInfo.ETag
+			}
+
+			objectChan = loop.link.client.ListObjects(ctx,
 				loop.bucketName, minio.ListObjectsOptions{},
 			)
 
 			for objectInfo = range objectChan {
-				e = loop.context.Err()
+				e = ctx.Err()
 				if e != nil {
 					continue // drain objectChan, per Minio documentation
 				}
@@ -116,15 +124,20 @@ func (loop *Loop) Downlink() (e error) {
 					continue
 				}
 
-				e = loop.link.Downlink(loop.context, loop.bucketName,
-					objectInfo.Key,
-				)
+				for _, eTag = range objectETag {
+					if eTag == objectInfo.ETag {
+						goto end
+					}
+				}
+
+				e = loop.link.Downlink(ctx, loop.bucketName, objectInfo.Key)
 				if e != nil {
 					log.Error().Err(e)
 
 					continue
 				}
 
+			end:
 				objectETag[objectInfo.Key] = objectInfo.ETag
 			}
 		}

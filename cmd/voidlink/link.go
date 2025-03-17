@@ -34,19 +34,18 @@ type Link struct {
 
 func NewLink(void *voidDB.Void, client *minio.Client) (l *Link) {
 	l = &Link{
-		void:    void,
-		client:  client,
-		channel: make(chan Record),
+		void:   void,
+		client: client,
 	}
-
-	l.reader0, l.writer0 = io.Pipe()
-	l.reader1, l.writer1 = io.Pipe()
 
 	return
 }
 
 func (l *Link) renew() {
-	*l = *NewLink(l.void, l.client)
+	l.channel = make(chan Record)
+
+	l.reader0, l.writer0 = io.Pipe()
+	l.reader1, l.writer1 = io.Pipe()
 
 	return
 }

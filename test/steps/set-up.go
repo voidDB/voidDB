@@ -29,7 +29,11 @@ func setUp(ctx0 context.Context, scenario *godog.Scenario) (
 
 	ctx = context.WithValue(ctx, ctxKeyTempDir{}, path)
 
+	ctx = context.WithValue(ctx, ctxKeyProcesses{}, []*os.Process{})
+
 	return
 }
 
 type ctxKeyTempDir struct{}
+
+type ctxKeyProcesses struct{}
