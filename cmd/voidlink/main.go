@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"os"
 	"os/signal"
@@ -15,16 +16,21 @@ import (
 	"github.com/voidDB/voidDB"
 )
 
+var (
+	//go:embed README
+	readme string
+)
+
 type CLI struct {
-	PathToVoid      string        `arg`
-	S3Endpoint      string        `arg name:"s3-endpoint"`
-	BucketName      string        `arg`
-	ObjectName      string        `arg optional`
-	AccessKeyID     string        `default:"minioadmin"`
-	SecretAccessKey string        `default:"minioadmin"`
-	UplinkPeriod    time.Duration `default:"1s"`
-	DownlinkPeriod  time.Duration `default:"1s"`
-	VoidCapacity    int           `default:"1099511627776"`
+	PathToVoid     string        `arg type:path`
+	S3Endpoint     string        `arg name:"s3-endpoint"`
+	BucketName     string        `arg`
+	UploadName     string        `arg optional help:"Defaults to a UUIDv6."`
+	AccessKey      string        `env:"ACCESS_KEY" default:"minioadmin"`
+	SecretKey      string        `env:"SECRET_KEY" default:"minioadmin"`
+	UplinkPeriod   time.Duration `default:"1s" help:"0 disables uplink."`
+	DownlinkPeriod time.Duration `default:"1s" help:"0 disables downlink."`
+	VoidCapacity   int           `default:"1099511627776"`
 }
 
 func (cli *CLI) Run() (e error) {
@@ -49,9 +55,7 @@ func (cli *CLI) Run() (e error) {
 
 	client, e = minio.New(cli.S3Endpoint,
 		&minio.Options{
-			Creds: credentials.NewStaticV4(cli.AccessKeyID, cli.SecretAccessKey,
-				"",
-			),
+			Creds: credentials.NewStaticV4(cli.AccessKey, cli.SecretKey, ""),
 		},
 	)
 	if e != nil {
@@ -75,19 +79,19 @@ func (cli *CLI) Run() (e error) {
 		}
 	}
 
-	if cli.ObjectName == "" {
+	if cli.UploadName == "" {
 		uuidv6, e = uuid.NewV6()
 		if e != nil {
 			return
 		}
 
-		cli.ObjectName = uuidv6.String()
+		cli.UploadName = uuidv6.String()
 	}
 
 	loop = NewLoop(
 		NewLink(void, client),
 		cli.BucketName,
-		cli.ObjectName,
+		cli.UploadName,
 		cli.UplinkPeriod,
 		cli.DownlinkPeriod,
 	)
@@ -106,7 +110,9 @@ func (cli *CLI) Run() (e error) {
 
 func main() {
 	var (
-		app *kong.Context = kong.Parse(&CLI{})
+		app *kong.Context = kong.Parse(&CLI{},
+			kong.Description(readme),
+		)
 	)
 
 	app.FatalIfErrorf(

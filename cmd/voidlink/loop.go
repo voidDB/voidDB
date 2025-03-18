@@ -25,11 +25,17 @@ func NewLoop(link *Link, bucketName, uploadName string,
 	loop *Loop,
 ) {
 	loop = &Loop{
-		link:           link,
-		bucketName:     bucketName,
-		uploadName:     uploadName,
-		uplinkTicker:   time.NewTicker(uplinkPeriod),
-		downlinkTicker: time.NewTicker(downlinkPeriod),
+		link:       link,
+		bucketName: bucketName,
+		uploadName: uploadName,
+	}
+
+	if uplinkPeriod > 0 {
+		loop.uplinkTicker = time.NewTicker(uplinkPeriod)
+	}
+
+	if downlinkPeriod > 0 {
+		loop.downlinkTicker = time.NewTicker(downlinkPeriod)
 	}
 
 	return
@@ -41,11 +47,15 @@ func (loop *Loop) Uplink(ctx context.Context) (e error) {
 		txnIDLast int
 
 		getTxnID = func(txn *voidDB.Txn) error {
-			txnID = txn.SerialNumber()
+			txnID = txn.SerialNumber() - 1
 
 			return nil
 		}
 	)
+
+	if loop.uplinkTicker == nil {
+		return
+	}
 
 	for {
 		select {
@@ -60,7 +70,7 @@ func (loop *Loop) Uplink(ctx context.Context) (e error) {
 				continue
 			}
 
-			if txnID <= txnIDLast+1 {
+			if txnID <= txnIDLast {
 				continue
 			}
 
@@ -84,6 +94,10 @@ func (loop *Loop) Downlink(ctx context.Context) (e error) {
 
 		objectETag = make(map[string]string)
 	)
+
+	if loop.downlinkTicker == nil {
+		return
+	}
 
 	for {
 		select {

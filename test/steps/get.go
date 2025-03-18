@@ -20,6 +20,10 @@ func AddStepGet(sc *godog.ScenarioContext) {
 
 	sc.Then(`^getting "([^"]*)" from "([^"]*)" should not find$`, getNotFound)
 
+	sc.Then(`^getting "([^"]*)" using "([^"]*)" should not find$`,
+		getNotFoundUsingCursor,
+	)
+
 	return
 }
 
@@ -87,6 +91,30 @@ func getNotFound(ctx0 context.Context, key, txnName string) (
 	)
 
 	_, e = txn.Get(
+		[]byte(key),
+	)
+
+	assert.Equal(
+		godog.T(ctx),
+		common.ErrorNotFound,
+		e,
+	)
+
+	e = nil
+
+	return
+}
+
+func getNotFoundUsingCursor(ctx0 context.Context, key, cursorName string) (
+	ctx context.Context, e error,
+) {
+	ctx = ctx0
+
+	var (
+		cur = ctx.Value(ctxKeyCursor{cursorName}).(*cursor.Cursor)
+	)
+
+	_, e = cur.Get(
 		[]byte(key),
 	)
 

@@ -10,15 +10,59 @@ import (
 	"github.com/cucumber/godog"
 )
 
+const (
+	voidlinkDefaultPeriod = "100ms"
+	voidlinkDisablePeriod = "0"
+)
+
 func AddStepNewVoidlink(sc *godog.ScenarioContext) {
 	sc.Given(`^there is a new VoidLink between "([^"]*)" and "([^"]*)"$`,
 		newVoidlink,
 	)
 
+	sc.Given(`^there is a new uplink-only VoidLink between "([^"]*)" and `+
+		`"([^"]*)"$`,
+		newVoidlinkUpOnly,
+	)
+
+	sc.Given(`^there is a new downlink-only VoidLink between "([^"]*)" and `+
+		`"([^"]*)"$`,
+		newVoidlinkDownOnly,
+	)
+
 	return
 }
 
-func newVoidlink(ctx0 context.Context, voidName, bucketName string) (
+func newVoidlink(ctx context.Context, voidName, bucketName string) (
+	context.Context, error,
+) {
+
+	return newVoidlinkSetPeriods(ctx, voidName, bucketName,
+		voidlinkDefaultPeriod, voidlinkDefaultPeriod,
+	)
+}
+
+func newVoidlinkUpOnly(ctx context.Context, voidName, bucketName string) (
+	context.Context, error,
+) {
+
+	return newVoidlinkSetPeriods(ctx, voidName, bucketName,
+		voidlinkDefaultPeriod, voidlinkDisablePeriod,
+	)
+}
+
+func newVoidlinkDownOnly(ctx context.Context, voidName, bucketName string) (
+	context.Context, error,
+) {
+
+	return newVoidlinkSetPeriods(ctx, voidName, bucketName,
+		voidlinkDisablePeriod, voidlinkDefaultPeriod,
+	)
+}
+
+func newVoidlinkSetPeriods(ctx0 context.Context, voidName, bucketName,
+	uplinkPeriod, downlinkPeriod string,
+) (
 	ctx context.Context, e error,
 ) {
 	ctx = ctx0
@@ -41,8 +85,8 @@ func newVoidlink(ctx0 context.Context, voidName, bucketName string) (
 			),
 			minioServerAddr,
 			bucketName,
-			"--uplink-period", "100ms",
-			"--downlink-period", "100ms",
+			"--uplink-period", uplinkPeriod,
+			"--downlink-period", downlinkPeriod,
 		)
 
 		exitError   *exec.ExitError
