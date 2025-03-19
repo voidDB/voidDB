@@ -14,6 +14,7 @@ import (
 	"go.etcd.io/bbolt"
 
 	"github.com/voidDB/voidDB"
+	"github.com/voidDB/voidDB/cursor"
 )
 
 const (
@@ -117,6 +118,60 @@ func BenchmarkVoidPut(b *testing.B) {
 	return
 }
 
+func BenchmarkVoidPutInKeyspace(b *testing.B) {
+	const (
+		keyspace = "random"
+		mapSize  = 1 << 30 // 1 GiB
+	)
+
+	var (
+		cur  *cursor.Cursor
+		e    error
+		i    int
+		path string
+		void *voidDB.Void
+
+		put = func(txn *voidDB.Txn) (err error) {
+			cur, err = txn.OpenCursor([]byte(keyspace))
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				err = cur.Put(key[i], val[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+	)
+
+	path, e = os.MkdirTemp("", "")
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	defer os.RemoveAll(path)
+
+	void, e = voidDB.NewVoid(path+"/void", mapSize)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.ResetTimer()
+
+	e = void.Update(true, put)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.StopTimer()
+
+	return
+}
+
 func BenchmarkVoidGet(b *testing.B) {
 	const (
 		mapSize = 1 << 30 // 1 GiB
@@ -142,6 +197,81 @@ func BenchmarkVoidGet(b *testing.B) {
 		get = func(txn *voidDB.Txn) (err error) {
 			for i = 0; i < b.N; i++ {
 				_, err = txn.Get(key[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+	)
+
+	path, e = os.MkdirTemp("", "")
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	defer os.RemoveAll(path)
+
+	void, e = voidDB.NewVoid(path+"/void", mapSize)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = void.Update(false, put)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.ResetTimer()
+
+	e = void.View(get)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.StopTimer()
+
+	return
+}
+
+func BenchmarkVoidGetInKeyspace(b *testing.B) {
+	const (
+		keyspace = "random"
+		mapSize  = 1 << 30 // 1 GiB
+	)
+
+	var (
+		cur  *cursor.Cursor
+		e    error
+		i    int
+		path string
+		void *voidDB.Void
+
+		put = func(txn *voidDB.Txn) (err error) {
+			cur, err = txn.OpenCursor([]byte(keyspace))
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				err = cur.Put(key[i], val[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+
+		get = func(txn *voidDB.Txn) (err error) {
+			cur, err = txn.OpenCursor([]byte(keyspace))
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				_, err = cur.Get(key[i])
 				if err != nil {
 					return
 				}
@@ -243,6 +373,81 @@ func BenchmarkVoidGetNext(b *testing.B) {
 	return
 }
 
+func BenchmarkVoidGetNextInKeyspace(b *testing.B) {
+	const (
+		keyspace = "random"
+		mapSize  = 1 << 30 // 1 GiB
+	)
+
+	var (
+		cur  *cursor.Cursor
+		e    error
+		i    int
+		path string
+		void *voidDB.Void
+
+		put = func(txn *voidDB.Txn) (err error) {
+			cur, err = txn.OpenCursor([]byte(keyspace))
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				err = cur.Put(key[i], val[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+
+		get = func(txn *voidDB.Txn) (err error) {
+			cur, err = txn.OpenCursor([]byte(keyspace))
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				_, _, err = cur.GetNext()
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+	)
+
+	path, e = os.MkdirTemp("", "")
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	defer os.RemoveAll(path)
+
+	void, e = voidDB.NewVoid(path+"/void", mapSize)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = void.Update(false, put)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.ResetTimer()
+
+	e = void.View(get)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.StopTimer()
+
+	return
+}
+
 func BenchmarkLMDBPut(b *testing.B) {
 	const (
 		mapSize = 1 << 31 // 2 GiB
@@ -278,6 +483,75 @@ func BenchmarkLMDBPut(b *testing.B) {
 	}
 
 	e = env.SetMapSize(mapSize)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	tmp, e = os.MkdirTemp("", "")
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	defer os.RemoveAll(tmp)
+
+	e = env.Open(tmp, 0, 0644)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.ResetTimer()
+
+	e = env.Update(put)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.StopTimer()
+
+	return
+}
+
+func BenchmarkLMDBPutInDB(b *testing.B) {
+	const (
+		dbName  = "random"
+		mapSize = 1 << 31 // 2 GiB
+	)
+
+	var (
+		dbi lmdb.DBI
+		e   error
+		env *lmdb.Env
+		i   int
+		tmp string
+
+		put = func(txn *lmdb.Txn) (err error) {
+			dbi, err = txn.OpenDBI(dbName, lmdb.Create)
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				err = txn.Put(dbi, key[i], val[i], 0)
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+	)
+
+	env, e = lmdb.NewEnv()
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = env.SetMapSize(mapSize)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = env.SetMaxDBs(1)
 	if e != nil {
 		b.Fatal(e)
 	}
@@ -392,6 +666,98 @@ func BenchmarkLMDBGet(b *testing.B) {
 	return
 }
 
+func BenchmarkLMDBGetInDB(b *testing.B) {
+	const (
+		dbName  = "random"
+		mapSize = 1 << 31 // 2 GiB
+	)
+
+	var (
+		dbi lmdb.DBI
+		e   error
+		env *lmdb.Env
+		i   int
+		tmp string
+
+		put = func(txn *lmdb.Txn) (err error) {
+			dbi, err = txn.OpenDBI(dbName, lmdb.Create)
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				err = txn.Put(dbi, key[i], val[i], 0)
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+
+		get = func(txn *lmdb.Txn) (err error) {
+			txn.RawRead = true
+
+			dbi, err = txn.OpenDBI(dbName, lmdb.Create)
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				_, err = txn.Get(dbi, key[i])
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+	)
+
+	env, e = lmdb.NewEnv()
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = env.SetMapSize(mapSize)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = env.SetMaxDBs(1)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	tmp, e = os.MkdirTemp("", "")
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	defer os.RemoveAll(tmp)
+
+	e = env.Open(tmp, lmdb.NoSync, 0644)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = env.Update(put)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.ResetTimer()
+
+	e = env.View(get)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.StopTimer()
+
+	return
+}
+
 func BenchmarkLMDBGetNext(b *testing.B) {
 	const (
 		mapSize = 1 << 31 // 2 GiB
@@ -451,6 +817,104 @@ func BenchmarkLMDBGetNext(b *testing.B) {
 	}
 
 	e = env.SetMapSize(mapSize)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	tmp, e = os.MkdirTemp("", "")
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	defer os.RemoveAll(tmp)
+
+	e = env.Open(tmp, lmdb.NoSync, 0644)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = env.Update(put)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.ResetTimer()
+
+	e = env.View(get)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	b.StopTimer()
+
+	return
+}
+
+func BenchmarkLMDBGetNextInDB(b *testing.B) {
+	const (
+		dbName  = "random"
+		mapSize = 1 << 31 // 2 GiB
+	)
+
+	var (
+		cur *lmdb.Cursor
+		dbi lmdb.DBI
+		e   error
+		env *lmdb.Env
+		i   int
+		tmp string
+
+		put = func(txn *lmdb.Txn) (err error) {
+			dbi, err = txn.OpenDBI(dbName, lmdb.Create)
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				err = txn.Put(dbi, key[i], val[i], 0)
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+
+		get = func(txn *lmdb.Txn) (err error) {
+			txn.RawRead = true
+
+			dbi, err = txn.OpenDBI(dbName, lmdb.Create)
+			if err != nil {
+				return
+			}
+
+			cur, e = txn.OpenCursor(dbi)
+			if err != nil {
+				return
+			}
+
+			for i = 0; i < b.N; i++ {
+				_, _, err = cur.Get(nil, nil, lmdb.Next)
+				if err != nil {
+					return
+				}
+			}
+
+			return
+		}
+	)
+
+	env, e = lmdb.NewEnv()
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = env.SetMapSize(mapSize)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	e = env.SetMaxDBs(1)
 	if e != nil {
 		b.Fatal(e)
 	}

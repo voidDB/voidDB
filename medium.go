@@ -40,9 +40,11 @@ func (txn medium) Save(data []byte) (pointer int) {
 
 	txn.saveList[pointer] = data
 
-	if !txn.freeze {
-		txn.setRootNodePointer(txn.keyspace, pointer)
-	}
+	return
+}
+
+func (txn medium) Root(offset int) {
+	txn.setRootNodePointer(txn.keyspace, offset)
 
 	return
 }

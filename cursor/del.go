@@ -64,6 +64,8 @@ func (cursor *Cursor) del(linkMeta link.Metadata) (e error) {
 		cursor.stack[i].offset = pointer
 	}
 
+	cursor.medium.Root(pointer)
+
 	return
 }
 

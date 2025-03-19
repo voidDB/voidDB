@@ -74,6 +74,8 @@ func (cursor *Cursor) put(key, value, linkMeta link.Metadata) (e error) {
 		cursor.offset = cursor.medium.Save(newRoot)
 	}
 
+	cursor.medium.Root(cursor.offset)
+
 	return
 }
 

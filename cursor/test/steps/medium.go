@@ -40,3 +40,7 @@ func (m *Medium) Load(offset, length int) []byte {
 func (m *Medium) Free(offset, length int) {
 	return
 }
+
+func (m *Medium) Root(int) {
+	return
+}

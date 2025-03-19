@@ -29,7 +29,6 @@ type Txn struct {
 	freeWarm map[int][]int
 	freeCool map[int][]int
 	coolList map[int]struct{}
-	freeze   bool
 
 	*cursor.Cursor
 }
@@ -142,8 +141,6 @@ func (txn *Txn) Commit() (e error) {
 	)
 
 	defer abort()
-
-	txn.freeze = true
 
 	txn.enqueueFreeLists()
 
