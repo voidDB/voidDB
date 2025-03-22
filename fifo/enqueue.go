@@ -88,6 +88,8 @@ func enqueueCannibalise(medium Medium, offset, txnID int, pointers []int) (
 
 	switch {
 	case len(pointers) == 0:
+		tail = offset
+
 		goto end
 
 	case len(pointers) > MaxNodeLength:

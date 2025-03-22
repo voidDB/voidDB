@@ -294,6 +294,10 @@ func (txn *Txn) enqueueFreeLists() {
 	)
 
 	for size = range txn.freeWarm {
+		if size == pageSize {
+			continue
+		}
+
 		txn.meta.freeQueue(size).Enqueue(
 			medium{txn, nil},
 			txn.meta.getSerialNumber(),
@@ -311,6 +315,15 @@ func (txn *Txn) enqueueFreeLists() {
 			medium{txn, nil},
 			txn.meta.getSerialNumber(),
 			txn.freeCool[size],
+			false,
+		)
+	}
+
+	if len(txn.freeWarm[pageSize]) > 0 {
+		txn.meta.freeQueue(pageSize).Enqueue(
+			medium{txn, nil},
+			txn.meta.getSerialNumber(),
+			txn.freeWarm[pageSize],
 			false,
 		)
 	}
