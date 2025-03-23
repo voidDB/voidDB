@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	keySize = 511
+	keySize = 511 // voidDB allows 512-byte keys, but LMDB does not
 	valSize = 4096
 )
 

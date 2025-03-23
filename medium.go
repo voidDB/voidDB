@@ -129,9 +129,27 @@ func (txn medium) getFreePageCold(size int) (pointer int, e error) {
 }
 
 func (txn medium) getFreePageNew(size int) (pointer int) {
+	var (
+		p int
+	)
+
 	pointer = txn.meta.getFrontierPointer()
+
+	if size < pageSize {
+		for p = pointer + size; p < pointer+pageSize; p += size {
+			txn.freeCool[size] = append(txn.freeCool[size], p)
+
+			txn.coolList[p] = struct{}{}
+		}
+
+		size = pageSize
+	}
 
 	txn.meta.setFrontierPointer(pointer + size)
 
 	return
+}
+
+func align(size int) int {
+	return 1 << logarithm(size)
 }

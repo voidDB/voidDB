@@ -258,12 +258,8 @@ func (void *Void) write(data []byte, offset int) (e error) {
 	return
 }
 
-func align(size int) int {
-	return 1 << logarithm(size)
-}
-
 func logarithm(size int) (exp int) {
-	for exp = 12; 1<<exp < size; exp++ {
+	for exp = 3; 1<<exp < size; exp++ {
 		continue
 	}
 
