@@ -6,24 +6,32 @@ import (
 
 func (node Node) Insert(
 	index, pointerL, pointerR, length int, key, metadata link.Metadata,
+	inPlace bool,
 ) (
 	newNode, _ Node, _ []byte,
 ) {
 	var (
-		i int
+		i          int
+		nodeLength int = node.Length()
 	)
 
-	newNode = NewNode()
+	switch {
+	case inPlace:
+		newNode = node
 
-	for i = 0; i < index; i++ {
-		copyElemKey(newNode, node, i, 0)
+	default:
+		newNode = NewNode()
+
+		for i = 0; i < index; i++ {
+			copyElemKey(newNode, node, i, 0)
+		}
 	}
 
-	for i = i; i < node.Length(); i++ {
+	copyElem(newNode, node, nodeLength, 1)
+
+	for i = nodeLength - 1; i >= index; i-- {
 		copyElemKey(newNode, node, i, 1)
 	}
-
-	copyElem(newNode, node, i, 1)
 
 	newNode.setKey(index, key)
 
@@ -33,12 +41,12 @@ func (node Node) Insert(
 		newNode.setValueOrChild(index+1, pointerR, length, metadata)
 	}
 
-	if node.Length()+1 == MaxNodeLength {
+	if nodeLength+1 == MaxNodeLength {
 		return newNode.split()
 	}
 
 	newNode.setLength(
-		node.Length() + 1,
+		nodeLength + 1,
 	)
 
 	return

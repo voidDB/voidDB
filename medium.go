@@ -15,18 +15,16 @@ func (txn medium) Meta() []byte {
 	return common.Field(txn.meta, 2*wordSize, 2*wordSize)
 }
 
-func (txn medium) Load(offset, length int) (data []byte) {
-	var (
-		cached bool
-	)
+func (txn medium) Load(offset, length int) (data []byte, dirty bool) {
+	data, dirty = txn.saveList[offset]
 
-	data, cached = txn.saveList[offset]
-
-	if cached {
-		return data[:length]
+	if dirty {
+		return
 	}
 
-	return txn.read(offset, length)
+	data = txn.read(offset, length)
+
+	return
 }
 
 func (txn medium) Save(data []byte) (pointer int) {

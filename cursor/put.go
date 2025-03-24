@@ -68,7 +68,7 @@ func (cursor *Cursor) put(key, value, linkMeta link.Metadata) (e error) {
 	default:
 		newRoot, _, _ = node.NewNode().
 			Insert(0, pointer0, pointer1, 0, promoted,
-				cursor.medium.Meta(),
+				cursor.medium.Meta(), true,
 			)
 
 		cursor.offset = cursor.medium.Save(newRoot)
@@ -85,16 +85,17 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte,
 	pointer0, pointer1 int, promoted []byte, e error,
 ) {
 	var (
-		oldNode  node.Node
 		newNode0 node.Node
 		newNode1 node.Node
+		oldNode  node.Node
 
+		dirty   bool
 		index   int
 		length  int
 		pointer int
 	)
 
-	oldNode, e = getNode(medium, offset, true)
+	oldNode, dirty, e = getNode(medium, offset, true)
 	if e != nil {
 		return
 	}
@@ -106,7 +107,7 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte,
 	switch {
 	case pointer == 0:
 		newNode0, newNode1, promoted = oldNode.Insert(index,
-			putPointer, 0, putLength, key, linkMeta,
+			putPointer, 0, putLength, key, linkMeta, dirty,
 		)
 
 	case length > 0:
@@ -115,7 +116,7 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte,
 		fallthrough
 
 	case pointer == tombstone:
-		newNode0 = oldNode.Update(index, putPointer, putLength, linkMeta)
+		newNode0 = oldNode.Update(index, putPointer, putLength, linkMeta, dirty)
 
 	default:
 		pointer0, pointer1, promoted, e = put(medium, pointer,
@@ -127,13 +128,11 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte,
 
 		switch {
 		case pointer1 == 0:
-			newNode0 = oldNode.Update(index,
-				pointer0, 0, medium.Meta(),
-			)
+			newNode0 = oldNode.Update(index, pointer0, 0, medium.Meta(), dirty)
 
 		default:
 			newNode0, newNode1, promoted = oldNode.Insert(index,
-				pointer0, pointer1, 0, promoted, medium.Meta(),
+				pointer0, pointer1, 0, promoted, medium.Meta(), dirty,
 			)
 
 			pointer1 = 0

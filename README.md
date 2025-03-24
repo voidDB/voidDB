@@ -37,196 +37,102 @@ release of resources upon process termination.
 
 ## Benchmarks
 
-voidDB outperforms well-known key-value stores available to Go developers that
-are based on B+ trees (LMDB, bbolt) and log-structured merge(LSM)-trees
-(LevelDB, BadgerDB), in [preliminary performance tests](test/bench_test.go)
-conducted on x86-64 and AArch64 instances.
+voidDB consistently outperforms well-known key-value stores available to Go
+developers based on B+ trees (LMDB, bbolt) and log-structured merge(LSM)-trees
+(LevelDB, BadgerDB).
 
-### x86-64/`amd64`
-
-#### AMD EPYC "Milan"
-
-Amazon EC2 `r6a`, EBS `gp3`:
-
-```txt
-goos: linux
-goarch: amd64
-pkg: test
-cpu: AMD EPYC 7R13 Processor
-BenchmarkPopulateKeyVal-8   	  131072	     14407 ns/op
-BenchmarkVoidPut-8          	  131072	     49785 ns/op
-BenchmarkVoidGet-8          	  131072	      1371 ns/op
-BenchmarkVoidGetNext-8      	  131072	       444.1 ns/op
-BenchmarkLMDBPut-8          	  131072	     76957 ns/op
-BenchmarkLMDBGet-8          	  131072	      1603 ns/op
-BenchmarkLMDBGetNext-8      	  131072	       879.3 ns/op
-BenchmarkBoltPut-8          	  131072	    229226 ns/op
-BenchmarkBoltGet-8          	  131072	      2414 ns/op
-BenchmarkBoltGetNext-8      	  131072	       452.2 ns/op
-BenchmarkLevelPut-8         	  131072	    152578 ns/op
-BenchmarkLevelGet-8         	  131072	     30373 ns/op
-BenchmarkLevelGetNext-8     	  131072	      4196 ns/op
-BenchmarkBadgerPut-8        	  131072	     89332 ns/op
-BenchmarkBadgerGet-8        	  131072	     20421 ns/op
-BenchmarkBadgerGetNext-8    	  131072	      2731 ns/op
-BenchmarkNothing-8          	  131072	         0.2787 ns/op
-```
-
-> [R6a instances](https://aws.amazon.com/ec2/instance-types/r6a/) are powered
-> by 3rd generation AMD EPYC processors ... and are an ideal fit for
-> memory-intensive workloads, such as SQL and NoSQL databases; distributed web
-> scale in-memory caches, such as Memcached and Redis; in-memory databases and
-> real-time big data analytics, such as Apache Hadoop and Apache Spark
-> clusters; and other enterprise applications.
-
-#### Intel Xeon Platinum "Sapphire Rapids"
-
-Amazon EC2 `r7i`, EBS `gp3`:
-
-```txt
-goos: linux
-goarch: amd64
-pkg: test
-cpu: Intel(R) Xeon(R) Platinum 8488C
-BenchmarkPopulateKeyVal-8   	  131072	     10750 ns/op
-BenchmarkVoidPut-8          	  131072	     56492 ns/op
-BenchmarkVoidGet-8          	  131072	      1227 ns/op
-BenchmarkVoidGetNext-8      	  131072	       377.2 ns/op
-BenchmarkLMDBPut-8          	  131072	     73205 ns/op
-BenchmarkLMDBGet-8          	  131072	      1563 ns/op
-BenchmarkLMDBGetNext-8      	  131072	       691.0 ns/op
-BenchmarkBoltPut-8          	  131072	    417657 ns/op
-BenchmarkBoltGet-8          	  131072	      2091 ns/op
-BenchmarkBoltGetNext-8      	  131072	       271.7 ns/op
-BenchmarkLevelPut-8         	  131072	     97302 ns/op
-BenchmarkLevelGet-8         	  131072	     28205 ns/op
-BenchmarkLevelGetNext-8     	  131072	      3799 ns/op
-BenchmarkBadgerPut-8        	  131072	     90613 ns/op
-BenchmarkBadgerGet-8        	  131072	     15375 ns/op
-BenchmarkBadgerGetNext-8    	  131072	      3033 ns/op
-BenchmarkNothing-8          	  131072	         0.3990 ns/op
-```
-
-> [R7i instances](https://aws.amazon.com/ec2/instance-types/r7i/) are ...
-> powered by custom 4th Generation Intel Xeon Scalable processors (code named
-> Sapphire Rapids) ... and ideal for all memory-intensive workloads (SQL and
-> NoSQL databases), distributed web scale in-memory caches (Memcached and
-> Redis), in-memory databases (SAP HANA), and real-time big data analytics
-> (Apache Hadoop and Apache Spark clusters).
-
-### AArch64/`arm64`
-
-#### Ampere Altra
-
-Google Cloud Compute Engine `t2a`, SSD persistent disk:
+### 2,048 values × 256 KiB = 512 MiB
 
 ```txt
 goos: linux
 goarch: arm64
 pkg: test
-BenchmarkPopulateKeyVal-8   	  131072	     13850 ns/op
-BenchmarkVoidPut-8          	  131072	     41688 ns/op
-BenchmarkVoidGet-8          	  131072	      1803 ns/op
-BenchmarkVoidGetNext-8      	  131072	       460.4 ns/op
-BenchmarkLMDBPut-8          	  131072	     48451 ns/op
-BenchmarkLMDBGet-8          	  131072	      2267 ns/op
-BenchmarkLMDBGetNext-8      	  131072	       892.3 ns/op
-BenchmarkBoltPut-8          	  131072	    192896 ns/op
-BenchmarkBoltGet-8          	  131072	      3566 ns/op
-BenchmarkBoltGetNext-8      	  131072	       451.0 ns/op
-BenchmarkLevelPut-8         	  131072	     59104 ns/op
-BenchmarkLevelGet-8         	  131072	     42006 ns/op
-BenchmarkLevelGetNext-8     	  131072	      4860 ns/op
-BenchmarkBadgerPut-8        	  131072	     47798 ns/op
-BenchmarkBadgerGet-8        	  131072	     27400 ns/op
-BenchmarkBadgerGetNext-8    	  131072	      3127 ns/op
-BenchmarkNothing-8          	  131072	         0.4184 ns/op
+BenchmarkPopulateKeyVal-2          	    2048	    486747 ns/op
+BenchmarkVoidPut-2                 	    2048	    242955 ns/op
+BenchmarkVoidPutInKeyspace-2       	    2048	    252459 ns/op
+BenchmarkVoidGet-2                 	    2048	       965.0 ns/op
+BenchmarkVoidGetInKeyspace-2       	    2048	       871.5 ns/op
+BenchmarkVoidGetNext-2             	    2048	       704.4 ns/op
+BenchmarkVoidGetNextInKeyspace-2   	    2048	       611.5 ns/op
+BenchmarkLMDBPut-2                 	    2048	    501073 ns/op
+BenchmarkLMDBPutInDB-2             	    2048	    260418 ns/op
+BenchmarkLMDBGet-2                 	    2048	      2163 ns/op
+BenchmarkLMDBGetInDB-2             	    2048	      2159 ns/op
+BenchmarkLMDBGetNext-2             	    2048	      1920 ns/op
+BenchmarkLMDBGetNextInDB-2         	    2048	      2004 ns/op
+BenchmarkBoltPut-2                 	    2048	    483040 ns/op
+BenchmarkBoltGet-2                 	    2048	      2412 ns/op
+BenchmarkBoltGetNext-2             	    2048	       856.4 ns/op
+BenchmarkLevelPut-2                	    2048	    902054 ns/op
+BenchmarkLevelGet-2                	    2048	     92537 ns/op
+BenchmarkLevelGetNext-2            	    2048	     85487 ns/op
+BenchmarkBadgerPut-2               	    2048	    632082 ns/op
+BenchmarkBadgerGet-2               	    2048	     32034 ns/op
+BenchmarkBadgerGetNext-2           	    2048	     31033 ns/op
+BenchmarkNothing-2                 	    2048	         0.4678 ns/op
 ```
 
-#### Apple M1 Pro chip
-
-Ubuntu VM in Multipass for macOS, MacBook Pro, Apple NVMe SSD:
+### 32,768 values × 16 KiB = 512 MiB
 
 ```txt
 goos: linux
 goarch: arm64
 pkg: test
-BenchmarkPopulateKeyVal-2   	  131072	      9069 ns/op
-BenchmarkVoidPut-2          	  131072	     14520 ns/op
-BenchmarkVoidGet-2          	  131072	      1018 ns/op
-BenchmarkVoidGetNext-2      	  131072	       243.0 ns/op
-BenchmarkLMDBPut-2          	  131072	     24132 ns/op
-BenchmarkLMDBGet-2          	  131072	      1455 ns/op
-BenchmarkLMDBGetNext-2      	  131072	       583.5 ns/op
-BenchmarkBoltPut-2          	  131072	     75558 ns/op
-BenchmarkBoltGet-2          	  131072	      2089 ns/op
-BenchmarkBoltGetNext-2      	  131072	       243.0 ns/op
-BenchmarkLevelPut-2         	  131072	     40225 ns/op
-BenchmarkLevelGet-2         	  131072	     27412 ns/op
-BenchmarkLevelGetNext-2     	  131072	      2870 ns/op
-BenchmarkBadgerPut-2        	  131072	     15450 ns/op
-BenchmarkBadgerGet-2        	  131072	     21309 ns/op
-BenchmarkBadgerGetNext-2    	  131072	     13626 ns/op
-BenchmarkNothing-2          	  131072	         0.3249 ns/op
+BenchmarkPopulateKeyVal-2          	   32768	     32403 ns/op
+BenchmarkVoidPut-2                 	   32768	     23288 ns/op
+BenchmarkVoidPutInKeyspace-2       	   32768	     22056 ns/op
+BenchmarkVoidGet-2                 	   32768	       986.5 ns/op
+BenchmarkVoidGetInKeyspace-2       	   32768	       981.5 ns/op
+BenchmarkVoidGetNext-2             	   32768	       551.0 ns/op
+BenchmarkVoidGetNextInKeyspace-2   	   32768	       381.2 ns/op
+BenchmarkLMDBPut-2                 	   32768	     36842 ns/op
+BenchmarkLMDBPutInDB-2             	   32768	     24648 ns/op
+BenchmarkLMDBGet-2                 	   32768	      1401 ns/op
+BenchmarkLMDBGetInDB-2             	   32768	      1546 ns/op
+BenchmarkLMDBGetNext-2             	   32768	       827.4 ns/op
+BenchmarkLMDBGetNextInDB-2         	   32768	       838.8 ns/op
+BenchmarkBoltPut-2                 	   32768	     72147 ns/op
+BenchmarkBoltGet-2                 	   32768	      2177 ns/op
+BenchmarkBoltGetNext-2             	   32768	       445.6 ns/op
+BenchmarkLevelPut-2                	   32768	     69430 ns/op
+BenchmarkLevelGet-2                	   32768	     21170 ns/op
+BenchmarkLevelGetNext-2            	   32768	     11026 ns/op
+BenchmarkBadgerPut-2               	   32768	     42966 ns/op
+BenchmarkBadgerGet-2               	   32768	     25837 ns/op
+BenchmarkBadgerGetNext-2           	   32768	      4509 ns/op
+BenchmarkNothing-2                 	   32768	         0.3255 ns/op
 ```
 
-Native macOS, MacBook Pro, Apple NVMe SSD:
-
-```txt
-goos: darwin
-goarch: arm64
-pkg: test
-cpu: Apple M1 Pro
-BenchmarkPopulateKeyVal-10    	  131072	      4598 ns/op
-BenchmarkVoidPut-10           	  131072	     10755 ns/op
-BenchmarkVoidGet-10           	  131072	       852.8 ns/op
-BenchmarkVoidGetNext-10       	  131072	       224.9 ns/op
-BenchmarkLMDBPut-10           	  131072	      6280 ns/op
-BenchmarkLMDBGet-10           	  131072	      1707 ns/op
-BenchmarkLMDBGetNext-10       	  131072	       754.7 ns/op
-BenchmarkBoltPut-10           	  131072	     61757 ns/op
-BenchmarkBoltGet-10           	  131072	      1807 ns/op
-BenchmarkBoltGetNext-10       	  131072	       439.5 ns/op
-BenchmarkLevelPut-10          	  131072	     97582 ns/op
-BenchmarkLevelGet-10          	  131072	     40275 ns/op
-BenchmarkLevelGetNext-10      	  131072	      3687 ns/op
-BenchmarkBadgerPut-10         	  131072	      7126 ns/op
-BenchmarkBadgerGet-10         	  131072	     13894 ns/op
-BenchmarkBadgerGetNext-10     	  131072	      2622 ns/op
-BenchmarkNothing-10           	  131072	         0.3366 ns/op
-```
-
-#### AWS Graviton4
-
-Amazon EC2 `r8g`, EBS `gp3`:
+### 524,288 values × 1 KiB = 512 MiB
 
 ```txt
 goos: linux
 goarch: arm64
 pkg: test
-BenchmarkPopulateKeyVal-8   	  131072	     10807 ns/op
-BenchmarkVoidPut-8          	  131072	     49006 ns/op
-BenchmarkVoidGet-8          	  131072	      1225 ns/op
-BenchmarkVoidGetNext-8      	  131072	       422.0 ns/op
-BenchmarkLMDBPut-8          	  131072	     71656 ns/op
-BenchmarkLMDBGet-8          	  131072	      1470 ns/op
-BenchmarkLMDBGetNext-8      	  131072	       749.5 ns/op
-BenchmarkBoltPut-8          	  131072	    119710 ns/op
-BenchmarkBoltGet-8          	  131072	      2158 ns/op
-BenchmarkBoltGetNext-8      	  131072	       354.1 ns/op
-BenchmarkLevelPut-8         	  131072	     77564 ns/op
-BenchmarkLevelGet-8         	  131072	     27252 ns/op
-BenchmarkLevelGetNext-8     	  131072	      3379 ns/op
-BenchmarkBadgerPut-8        	  131072	     90776 ns/op
-BenchmarkBadgerGet-8        	  131072	     15028 ns/op
-BenchmarkBadgerGetNext-8    	  131072	      1746 ns/op
-BenchmarkNothing-8          	  131072	         0.3586 ns/op
+BenchmarkPopulateKeyVal-2          	  524288	      3623 ns/op
+BenchmarkVoidPut-2                 	  524288	      8090 ns/op
+BenchmarkVoidPutInKeyspace-2       	  524288	      8122 ns/op
+BenchmarkVoidGet-2                 	  524288	      1321 ns/op
+BenchmarkVoidGetInKeyspace-2       	  524288	      1338 ns/op
+BenchmarkVoidGetNext-2             	  524288	       179.0 ns/op
+BenchmarkVoidGetNextInKeyspace-2   	  524288	       166.9 ns/op
+BenchmarkLMDBPut-2                 	  524288	     15095 ns/op
+BenchmarkLMDBPutInDB-2             	  524288	     11524 ns/op
+BenchmarkLMDBGet-2                 	  524288	      1980 ns/op
+BenchmarkLMDBGetInDB-2             	  524288	      1977 ns/op
+BenchmarkLMDBGetNext-2             	  524288	       595.8 ns/op
+BenchmarkLMDBGetNextInDB-2         	  524288	       623.5 ns/op
+BenchmarkBoltPut-2                 	  524288	    205160 ns/op
+BenchmarkBoltGet-2                 	  524288	      2381 ns/op
+BenchmarkBoltGetNext-2             	  524288	       184.1 ns/op
+BenchmarkLevelPut-2                	  524288	     18287 ns/op
+BenchmarkLevelGet-2                	  524288	     20767 ns/op
+BenchmarkLevelGetNext-2            	  524288	      1107 ns/op
+BenchmarkBadgerPut-2               	  524288	      6386 ns/op
+BenchmarkBadgerGet-2               	  524288	     38710 ns/op
+BenchmarkBadgerGetNext-2           	  524288	     16545 ns/op
+BenchmarkNothing-2                 	  524288	         0.3314 ns/op
 ```
-
-> [R8g instances](https://aws.amazon.com/ec2/instance-types/r8g/), powered by
-> the latest-generation AWS Graviton4 processors, ... are ideal for
-> memory-intensive workloads, such as databases, in-memory caches, and
-> real-time big data analytics.
 
 ## Getting Started
 

@@ -54,7 +54,7 @@ func (cursor *Cursor) get(key []byte) (value []byte, e error) {
 		pointer int
 	)
 
-	curNode, e = getNode(cursor.medium, cursor.offset, false)
+	curNode, _, e = getNode(cursor.medium, cursor.offset, false)
 	if e != nil {
 		return
 	}
@@ -72,7 +72,9 @@ func (cursor *Cursor) get(key []byte) (value []byte, e error) {
 		return nil, common.ErrorNotFound
 
 	case length > 0:
-		return cursor.medium.Load(pointer, length), nil
+		value, _ = cursor.medium.Load(pointer, length)
+
+		return
 	}
 
 	cursor.stack = append(cursor.stack,
@@ -101,7 +103,7 @@ func (cursor *Cursor) getLeafMeta(key []byte) (
 		pointer int
 	)
 
-	curNode, e = getNode(cursor.medium, cursor.offset, false)
+	curNode, _, e = getNode(cursor.medium, cursor.offset, false)
 	if e != nil {
 		return
 	}

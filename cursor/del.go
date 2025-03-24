@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	tombstone = 1 // HACK: Pointers are multiples of common.PageSize, hence the
-	graveyard = 2 // least significant 11 bits are free to mean other things.
+	tombstone = 1 // HACK: Pointers are multiples of common.WordSize, hence the
+	graveyard = 2 // least significant 3 bits are free to mean other things.
 )
 
 // Del deletes the key-value record indexed by the cursor. To delete a record
@@ -20,9 +20,11 @@ func (cursor *Cursor) Del() (e error) {
 
 func (cursor *Cursor) del(linkMeta link.Metadata) (e error) {
 	var (
-		i       int
 		newNode node.Node
 		oldNode node.Node
+
+		dirty   bool
+		i       int
 		pointer int
 	)
 
@@ -30,7 +32,7 @@ func (cursor *Cursor) del(linkMeta link.Metadata) (e error) {
 		linkMeta = cursor.medium.Meta()
 	}
 
-	oldNode, e = getNode(cursor.medium, cursor.offset, true)
+	oldNode, dirty, e = getNode(cursor.medium, cursor.offset, true)
 	if e != nil {
 		return
 	}
@@ -39,14 +41,14 @@ func (cursor *Cursor) del(linkMeta link.Metadata) (e error) {
 		oldNode.ValueOrChild(cursor.index),
 	)
 
-	newNode = oldNode.Update(cursor.index, tombstone, -1, linkMeta)
+	newNode = oldNode.Update(cursor.index, tombstone, -1, linkMeta, dirty)
 
 	pointer = cursor.medium.Save(newNode)
 
 	cursor.offset = pointer
 
 	for i = len(cursor.stack) - 1; i > -1; i-- {
-		oldNode, e = getNode(cursor.medium, cursor.stack[i].offset, true)
+		oldNode, dirty, e = getNode(cursor.medium, cursor.stack[i].offset, true)
 		if e != nil {
 			return
 		}
@@ -57,6 +59,7 @@ func (cursor *Cursor) del(linkMeta link.Metadata) (e error) {
 
 		newNode = oldNode.Update(cursor.stack[i].index, pointer, 0,
 			cursor.medium.Meta(),
+			dirty,
 		)
 
 		pointer = cursor.medium.Save(newNode)

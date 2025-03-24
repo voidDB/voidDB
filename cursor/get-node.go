@@ -6,9 +6,9 @@ import (
 )
 
 func getNode(medium Medium, offset int, free bool) (
-	n node.Node, e error,
+	n node.Node, dirty bool, e error,
 ) {
-	n = medium.Load(offset, common.PageSize)
+	n, dirty = medium.Load(offset, common.PageSize)
 
 	if !n.IsNode() {
 		e = common.ErrorCorrupt

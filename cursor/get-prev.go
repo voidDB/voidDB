@@ -50,7 +50,7 @@ func (cursor *Cursor) getPrev() (key, value []byte, e error) {
 		return cursor.getPrev()
 	}
 
-	curNode, e = getNode(cursor.medium, cursor.offset, false)
+	curNode, _, e = getNode(cursor.medium, cursor.offset, false)
 	if e != nil {
 		return
 	}
@@ -76,7 +76,7 @@ func (cursor *Cursor) getPrev() (key, value []byte, e error) {
 	case length > 0:
 		key = curNode.Key(cursor.index)
 
-		value = cursor.medium.Load(pointer, length)
+		value, _ = cursor.medium.Load(pointer, length)
 
 		return
 	}

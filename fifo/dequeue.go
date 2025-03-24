@@ -11,8 +11,10 @@ func (fifo FIFO) Dequeue(medium Medium, txnIDCeiling int) (
 		index  int = fifo.getNextIndex()
 		offset int = fifo.getHeadPointer()
 
-		free Free = medium.Load(offset, pageSize)
+		free Free
 	)
+
+	free, _ = medium.Load(offset, pageSize)
 
 	switch {
 	case !free.isFree():

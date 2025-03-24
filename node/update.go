@@ -4,12 +4,20 @@ import (
 	"github.com/voidDB/voidDB/link"
 )
 
-func (node Node) Update(index, pointer, length int, metadata link.Metadata) (
+func (node Node) Update(index, pointer, length int, metadata link.Metadata,
+	inPlace bool,
+) (
 	newNode Node,
 ) {
-	newNode = make([]byte, pageSize)
+	switch {
+	case inPlace:
+		newNode = node
 
-	copy(newNode, node)
+	default:
+		newNode = make([]byte, pageSize)
+
+		copy(newNode, node)
+	}
 
 	switch {
 	case length < 0:

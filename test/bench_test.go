@@ -19,7 +19,9 @@ import (
 
 const (
 	keySize = 511 // voidDB allows 512-byte keys, but LMDB does not
-	valSize = 4096
+	valSize = 1024
+
+	mapSize = 1 << 40
 )
 
 var (
@@ -72,10 +74,6 @@ func BenchmarkPopulateKeyVal(b *testing.B) {
 }
 
 func BenchmarkVoidPut(b *testing.B) {
-	const (
-		mapSize = 1 << 30 // 1 GiB
-	)
-
 	var (
 		e    error
 		i    int
@@ -121,7 +119,6 @@ func BenchmarkVoidPut(b *testing.B) {
 func BenchmarkVoidPutInKeyspace(b *testing.B) {
 	const (
 		keyspace = "random"
-		mapSize  = 1 << 30 // 1 GiB
 	)
 
 	var (
@@ -173,10 +170,6 @@ func BenchmarkVoidPutInKeyspace(b *testing.B) {
 }
 
 func BenchmarkVoidGet(b *testing.B) {
-	const (
-		mapSize = 1 << 30 // 1 GiB
-	)
-
 	var (
 		e    error
 		i    int
@@ -238,7 +231,6 @@ func BenchmarkVoidGet(b *testing.B) {
 func BenchmarkVoidGetInKeyspace(b *testing.B) {
 	const (
 		keyspace = "random"
-		mapSize  = 1 << 30 // 1 GiB
 	)
 
 	var (
@@ -311,10 +303,6 @@ func BenchmarkVoidGetInKeyspace(b *testing.B) {
 }
 
 func BenchmarkVoidGetNext(b *testing.B) {
-	const (
-		mapSize = 1 << 30 // 1 GiB
-	)
-
 	var (
 		e    error
 		i    int
@@ -376,7 +364,6 @@ func BenchmarkVoidGetNext(b *testing.B) {
 func BenchmarkVoidGetNextInKeyspace(b *testing.B) {
 	const (
 		keyspace = "random"
-		mapSize  = 1 << 30 // 1 GiB
 	)
 
 	var (
@@ -449,10 +436,6 @@ func BenchmarkVoidGetNextInKeyspace(b *testing.B) {
 }
 
 func BenchmarkLMDBPut(b *testing.B) {
-	const (
-		mapSize = 1 << 31 // 2 GiB
-	)
-
 	var (
 		dbi lmdb.DBI
 		e   error
@@ -513,8 +496,7 @@ func BenchmarkLMDBPut(b *testing.B) {
 
 func BenchmarkLMDBPutInDB(b *testing.B) {
 	const (
-		dbName  = "random"
-		mapSize = 1 << 31 // 2 GiB
+		dbName = "random"
 	)
 
 	var (
@@ -581,10 +563,6 @@ func BenchmarkLMDBPutInDB(b *testing.B) {
 }
 
 func BenchmarkLMDBGet(b *testing.B) {
-	const (
-		mapSize = 1 << 31 // 2 GiB
-	)
-
 	var (
 		dbi lmdb.DBI
 		e   error
@@ -668,8 +646,7 @@ func BenchmarkLMDBGet(b *testing.B) {
 
 func BenchmarkLMDBGetInDB(b *testing.B) {
 	const (
-		dbName  = "random"
-		mapSize = 1 << 31 // 2 GiB
+		dbName = "random"
 	)
 
 	var (
@@ -759,10 +736,6 @@ func BenchmarkLMDBGetInDB(b *testing.B) {
 }
 
 func BenchmarkLMDBGetNext(b *testing.B) {
-	const (
-		mapSize = 1 << 31 // 2 GiB
-	)
-
 	var (
 		cur *lmdb.Cursor
 		dbi lmdb.DBI
@@ -852,8 +825,7 @@ func BenchmarkLMDBGetNext(b *testing.B) {
 
 func BenchmarkLMDBGetNextInDB(b *testing.B) {
 	const (
-		dbName  = "random"
-		mapSize = 1 << 31 // 2 GiB
+		dbName = "random"
 	)
 
 	var (

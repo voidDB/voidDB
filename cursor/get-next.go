@@ -40,7 +40,7 @@ func (cursor *Cursor) getNext() (key, value []byte, e error) {
 		goto end
 	}
 
-	curNode, e = getNode(cursor.medium, cursor.offset, false)
+	curNode, _, e = getNode(cursor.medium, cursor.offset, false)
 	if e != nil {
 		return
 	}
@@ -57,7 +57,7 @@ func (cursor *Cursor) getNext() (key, value []byte, e error) {
 	case length > 0:
 		key = curNode.Key(cursor.index)
 
-		value = cursor.medium.Load(pointer, length)
+		value, _ = cursor.medium.Load(pointer, length)
 
 		return
 
@@ -102,7 +102,7 @@ func (cursor *Cursor) getNextWithLeafMeta(minTxnID int) (
 		goto end
 	}
 
-	curNode, e = getNode(cursor.medium, cursor.offset, false)
+	curNode, _, e = getNode(cursor.medium, cursor.offset, false)
 	if e != nil {
 		return
 	}
@@ -127,7 +127,7 @@ func (cursor *Cursor) getNextWithLeafMeta(minTxnID int) (
 		key = curNode.Key(cursor.index)
 
 		if e == nil {
-			value = cursor.medium.Load(pointer, length)
+			value, _ = cursor.medium.Load(pointer, length)
 		}
 
 		return
