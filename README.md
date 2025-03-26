@@ -37,101 +37,142 @@ release of resources upon process termination.
 
 ## Benchmarks
 
-voidDB consistently outperforms well-known key-value stores available to Go
-developers based on B+ trees (LMDB, bbolt) and log-structured merge(LSM)-trees
-(LevelDB, BadgerDB).
+voidDB outperforms well-known key-value stores available to Go developers that
+are based on B+ trees (LMDB, bbolt) and log-structured merge(LSM)-trees
+(LevelDB, BadgerDB), in [preliminary performance tests](test/bench_test.go)
+conducted on x86-64 and AArch64 instances hosted on Google Cloud (T2A/D machine
+series).
 
-### 2,048 values × 256 KiB = 512 MiB
+### Put
+
+#### 4,096 × 256-KiB random values
 
 ```txt
-goos: linux
-goarch: arm64
-pkg: test
-BenchmarkPopulateKeyVal-2          	    2048	    486747 ns/op
-BenchmarkVoidPut-2                 	    2048	    242955 ns/op
-BenchmarkVoidPutInKeyspace-2       	    2048	    252459 ns/op
-BenchmarkVoidGet-2                 	    2048	       965.0 ns/op
-BenchmarkVoidGetInKeyspace-2       	    2048	       871.5 ns/op
-BenchmarkVoidGetNext-2             	    2048	       704.4 ns/op
-BenchmarkVoidGetNextInKeyspace-2   	    2048	       611.5 ns/op
-BenchmarkLMDBPut-2                 	    2048	    501073 ns/op
-BenchmarkLMDBPutInDB-2             	    2048	    260418 ns/op
-BenchmarkLMDBGet-2                 	    2048	      2163 ns/op
-BenchmarkLMDBGetInDB-2             	    2048	      2159 ns/op
-BenchmarkLMDBGetNext-2             	    2048	      1920 ns/op
-BenchmarkLMDBGetNextInDB-2         	    2048	      2004 ns/op
-BenchmarkBoltPut-2                 	    2048	    483040 ns/op
-BenchmarkBoltGet-2                 	    2048	      2412 ns/op
-BenchmarkBoltGetNext-2             	    2048	       856.4 ns/op
-BenchmarkLevelPut-2                	    2048	    902054 ns/op
-BenchmarkLevelGet-2                	    2048	     92537 ns/op
-BenchmarkLevelGetNext-2            	    2048	     85487 ns/op
-BenchmarkBadgerPut-2               	    2048	    632082 ns/op
-BenchmarkBadgerGet-2               	    2048	     32034 ns/op
-BenchmarkBadgerGetNext-2           	    2048	     31033 ns/op
-BenchmarkNothing-2                 	    2048	         0.4678 ns/op
+|                           | AMD Milan (ms/op) | Ampere Altra (ms/op) |
+| ------------------------- | ----------------- | -------------------- |
+| voidDB (named keyspace)   |              1.24 |                 1.20 |
+| voidDB (default keyspace) |              1.25 |                 1.20 |
+| Bolt                      |              2.07 |                 1.83 |
+| LMDB (named keyspace)     |              2.18 |                 2.14 |
+| LMDB (default keyspace)   |              2.34 |                 2.52 |
+| BadgerDB                  |              3.30 |                 3.63 |
+| LevelDB                   |              3.74 |                 3.22 |
 ```
 
-### 32,768 values × 16 KiB = 512 MiB
+#### 65,536 × 16-KiB random values
 
 ```txt
-goos: linux
-goarch: arm64
-pkg: test
-BenchmarkPopulateKeyVal-2          	   32768	     32403 ns/op
-BenchmarkVoidPut-2                 	   32768	     23288 ns/op
-BenchmarkVoidPutInKeyspace-2       	   32768	     22056 ns/op
-BenchmarkVoidGet-2                 	   32768	       986.5 ns/op
-BenchmarkVoidGetInKeyspace-2       	   32768	       981.5 ns/op
-BenchmarkVoidGetNext-2             	   32768	       551.0 ns/op
-BenchmarkVoidGetNextInKeyspace-2   	   32768	       381.2 ns/op
-BenchmarkLMDBPut-2                 	   32768	     36842 ns/op
-BenchmarkLMDBPutInDB-2             	   32768	     24648 ns/op
-BenchmarkLMDBGet-2                 	   32768	      1401 ns/op
-BenchmarkLMDBGetInDB-2             	   32768	      1546 ns/op
-BenchmarkLMDBGetNext-2             	   32768	       827.4 ns/op
-BenchmarkLMDBGetNextInDB-2         	   32768	       838.8 ns/op
-BenchmarkBoltPut-2                 	   32768	     72147 ns/op
-BenchmarkBoltGet-2                 	   32768	      2177 ns/op
-BenchmarkBoltGetNext-2             	   32768	       445.6 ns/op
-BenchmarkLevelPut-2                	   32768	     69430 ns/op
-BenchmarkLevelGet-2                	   32768	     21170 ns/op
-BenchmarkLevelGetNext-2            	   32768	     11026 ns/op
-BenchmarkBadgerPut-2               	   32768	     42966 ns/op
-BenchmarkBadgerGet-2               	   32768	     25837 ns/op
-BenchmarkBadgerGetNext-2           	   32768	      4509 ns/op
-BenchmarkNothing-2                 	   32768	         0.3255 ns/op
+|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
+| ------------------------- | ----------------- | -------------------- |
+| voidDB (named keyspace)   |              89.3 |                 87.8 |
+| voidDB (default keyspace) |              89.4 |                 88.2 |
+| LMDB (named keyspace)     |             154   |                136   |
+| LMDB (default keyspace)   |             195   |                194   |
+| BadgerDB                  |             214   |                225   |
+| Bolt                      |             244   |                218   |
+| LevelDB                   |             273   |                227   |
 ```
 
-### 524,288 values × 1 KiB = 512 MiB
+#### 1,048,576 × 1-KiB random values
 
 ```txt
-goos: linux
-goarch: arm64
-pkg: test
-BenchmarkPopulateKeyVal-2          	  524288	      3623 ns/op
-BenchmarkVoidPut-2                 	  524288	      8090 ns/op
-BenchmarkVoidPutInKeyspace-2       	  524288	      8122 ns/op
-BenchmarkVoidGet-2                 	  524288	      1321 ns/op
-BenchmarkVoidGetInKeyspace-2       	  524288	      1338 ns/op
-BenchmarkVoidGetNext-2             	  524288	       179.0 ns/op
-BenchmarkVoidGetNextInKeyspace-2   	  524288	       166.9 ns/op
-BenchmarkLMDBPut-2                 	  524288	     15095 ns/op
-BenchmarkLMDBPutInDB-2             	  524288	     11524 ns/op
-BenchmarkLMDBGet-2                 	  524288	      1980 ns/op
-BenchmarkLMDBGetInDB-2             	  524288	      1977 ns/op
-BenchmarkLMDBGetNext-2             	  524288	       595.8 ns/op
-BenchmarkLMDBGetNextInDB-2         	  524288	       623.5 ns/op
-BenchmarkBoltPut-2                 	  524288	    205160 ns/op
-BenchmarkBoltGet-2                 	  524288	      2381 ns/op
-BenchmarkBoltGetNext-2             	  524288	       184.1 ns/op
-BenchmarkLevelPut-2                	  524288	     18287 ns/op
-BenchmarkLevelGet-2                	  524288	     20767 ns/op
-BenchmarkLevelGetNext-2            	  524288	      1107 ns/op
-BenchmarkBadgerPut-2               	  524288	      6386 ns/op
-BenchmarkBadgerGet-2               	  524288	     38710 ns/op
-BenchmarkBadgerGetNext-2           	  524288	     16545 ns/op
-BenchmarkNothing-2                 	  524288	         0.3314 ns/op
+|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
+| ------------------------- | ----------------- | -------------------- |
+| voidDB (default keyspace) |              21.1 |                 22.1 |
+| voidDB (named keyspace)   |              20.9 |                 22.9 |
+| LMDB (default keyspace)   |              36.0 |                 43.4 |
+| LMDB (named keyspace)     |              36.3 |                 42.1 |
+| LevelDB                   |              66.8 |                 56.4 |
+| Bolt                      | (timed out)       | (timed out)          |
+| BadgerDB                  | (crashed)         | (crashed)            |
+```
+
+### Get
+
+#### 4,096 × 256-KiB random values
+
+```txt
+|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
+| ------------------------- | ----------------- | -------------------- |
+| voidDB (named keyspace)   |              1.69 |                 1.72 |
+| voidDB (default keyspace) |              1.84 |                 1.74 |
+| LMDB (default keyspace)   |              4.95 |                 4.11 |
+| LMDB (named keyspace)     |              5.13 |                 4.28 |
+| Bolt                      |              5.71 |                 5.31 |
+| LevelDB                   |            121    |               223    |
+| BadgerDB                  |            261    |               128    |
+```
+
+#### 65,536 × 16-KiB random values
+
+```txt
+|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
+| ------------------------- | ----------------- | -------------------- |
+| voidDB (default keyspace) |              1.82 |                 1.98 |
+| voidDB (named keyspace)   |              2.02 |                 2.06 |
+| LMDB (named keyspace)     |              2.72 |                 2.67 |
+| LMDB (default keyspace)   |              2.81 |                 2.74 |
+| Bolt                      |              3.66 |                 4.17 |
+| LevelDB                   |             28.3  |                34.7  |
+| BadgerDB                  |             83.2  |                46.3  |
+```
+
+#### 1,048,576 × 1-KiB random values
+
+```txt
+|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
+| ------------------------- | ----------------- | -------------------- |
+| LMDB (default keyspace)   |              2.33 |                 2.65 |
+| LMDB (named keyspace)     |              2.44 |                 2.67 |
+| voidDB (named keyspace)   |              2.68 |                 2.12 |
+| voidDB (default keyspace) |              3.30 |                 2.77 |
+| LevelDB                   |             30.2  |                45.0  |
+| Bolt                      | (timed out)       | (timed out)          |
+| BadgerDB                  | (crashed)         | (crashed)            |
+```
+
+### GetNext
+
+#### 4,096 × 256-KiB random values
+
+```txt
+|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
+| ------------------------- | ----------------- | -------------------- |
+| voidDB (named keyspace)   |              1.20 |                 .995 |
+| voidDB (default keyspace) |              1.18 |                1.02  |
+| Bolt                      |              2.30 |                1.74  |
+| LMDB (named keyspace)     |              4.71 |                3.71  |
+| LMDB (default keyspace)   |              4.73 |                3.77  |
+| LevelDB                   |            104    |              114     |
+| BadgerDB                  |            257    |               72.1   |
+```
+
+#### 65,536 × 16-KiB random values
+
+```txt
+|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
+| ------------------------- | ----------------- | -------------------- |
+| voidDB (default keyspace) |              .922 |                 .733 |
+| voidDB (named keyspace)   |              .957 |                 .727 |
+| Bolt                      |             1.20  |                 .954 |
+| LMDB (default keyspace)   |             1.97  |                1.58  |
+| LMDB (named keyspace)     |             1.98  |                1.55  |
+| BadgerDB                  |            11.5   |               10.1   |
+| LevelDB                   |            55.8   |               15.1   |
+```
+
+#### 1,048,576 × 1-KiB random values
+
+```txt
+|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
+| ------------------------- | ----------------- | -------------------- |
+| LMDB (named keyspace)     |              .677 |                 .571 |
+| LMDB (default keyspace)   |              .705 |                 .573 |
+| voidDB (default keyspace) |              .845 |                 .280 |
+| voidDB (named keyspace)   |             1.03  |                1.51  |
+| LevelDB                   |            20.6   |              237     |
+| Bolt                      | (timed out)       | (timed out)          |
+| BadgerDB                  | (crashed)         | (crashed)            |
 ```
 
 ## Getting Started
