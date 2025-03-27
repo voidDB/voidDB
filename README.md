@@ -40,51 +40,51 @@ release of resources upon process termination.
 voidDB outperforms well-known key-value stores available to Go developers that
 are based on B+ trees (LMDB, bbolt) and log-structured merge(LSM)-trees
 (LevelDB, BadgerDB), in [preliminary performance tests](test/bench_test.go)
-conducted on x86-64 and AArch64 instances hosted on Google Cloud (T2A/D machine
-series).
+conducted on x86-64 and AArch64 instances hosted on Google Cloud (N2, T2A/D
+machine series).
 
 ### Put
 
 #### 4,096 × 256-KiB random values
 
 ```txt
-|                           | AMD Milan (ms/op) | Ampere Altra (ms/op) |
-| ------------------------- | ----------------- | -------------------- |
-| voidDB (named keyspace)   |              1.24 |                 1.20 |
-| voidDB (default keyspace) |              1.25 |                 1.20 |
-| Bolt                      |              2.07 |                 1.83 |
-| LMDB (named keyspace)     |              2.18 |                 2.14 |
-| LMDB (default keyspace)   |              2.34 |                 2.52 |
-| BadgerDB                  |              3.30 |                 3.63 |
-| LevelDB                   |              3.74 |                 3.22 |
+|                   (ms/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| voidDB (named keyspace)   |      1.24 |         1.20 |               1.22 |
+| voidDB (default keyspace) |      1.25 |         1.20 |               1.22 |
+| Bolt                      |      2.07 |         1.83 |               2.40 |
+| LMDB (named keyspace)     |      2.18 |         2.14 |               2.16 |
+| LMDB (default keyspace)   |      2.34 |         2.52 |               2.55 |
+| LevelDB                   |      3.74 |         3.22 |               3.46 |
+| BadgerDB                  |      3.30 |         3.63 |               3.62 |
 ```
 
 #### 65,536 × 16-KiB random values
 
 ```txt
-|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
-| ------------------------- | ----------------- | -------------------- |
-| voidDB (named keyspace)   |              89.3 |                 87.8 |
-| voidDB (default keyspace) |              89.4 |                 88.2 |
-| LMDB (named keyspace)     |             154   |                136   |
-| LMDB (default keyspace)   |             195   |                194   |
-| BadgerDB                  |             214   |                225   |
-| Bolt                      |             244   |                218   |
-| LevelDB                   |             273   |                227   |
+|                   (μs/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| voidDB (named keyspace)   |      89.3 |         87.8 |               88.7 |
+| voidDB (default keyspace) |      89.4 |         88.2 |               88.6 |
+| LMDB (named keyspace)     |     154   |        136   |              155   |
+| LMDB (default keyspace)   |     195   |        194   |              200   |
+| BadgerDB                  |     214   |        225   |              207   |
+| Bolt                      |     244   |        218   |              376   |
+| LevelDB                   |     273   |        227   |              282   |
 ```
 
 #### 1,048,576 × 1-KiB random values
 
 ```txt
-|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
-| ------------------------- | ----------------- | -------------------- |
-| voidDB (default keyspace) |              21.1 |                 22.1 |
-| voidDB (named keyspace)   |              20.9 |                 22.9 |
-| LMDB (default keyspace)   |              36.0 |                 43.4 |
-| LMDB (named keyspace)     |              36.3 |                 42.1 |
-| LevelDB                   |              66.8 |                 56.4 |
-| Bolt                      | (timed out)       | (timed out)          |
-| BadgerDB                  | (crashed)         | (crashed)            |
+|                   (μs/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| voidDB (default keyspace) |      21.1 |         22.1 |               23.2 |
+| voidDB (named keyspace)   |      20.9 |         22.9 |               23.7 |
+| BadgerDB                  |      27.1 |         42.1 |               28.9 |
+| LMDB (named keyspace)     |      36.3 |         42.1 |               40.9 |
+| LMDB (default keyspace)   |      36.0 |         43.4 |               41.0 |
+| LevelDB                   |      66.8 |         56.4 |              152   |
+| Bolt                      | timed out | timed out    | timed out          |
 ```
 
 ### Get
@@ -92,43 +92,43 @@ series).
 #### 4,096 × 256-KiB random values
 
 ```txt
-|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
-| ------------------------- | ----------------- | -------------------- |
-| voidDB (named keyspace)   |              1.69 |                 1.72 |
-| voidDB (default keyspace) |              1.84 |                 1.74 |
-| LMDB (default keyspace)   |              4.95 |                 4.11 |
-| LMDB (named keyspace)     |              5.13 |                 4.28 |
-| Bolt                      |              5.71 |                 5.31 |
-| LevelDB                   |            121    |               223    |
-| BadgerDB                  |            261    |               128    |
+|                   (μs/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| voidDB (named keyspace)   |      1.69 |         1.72 |               1.57 |
+| voidDB (default keyspace) |      1.84 |         1.74 |               1.53 |
+| LMDB (default keyspace)   |      4.95 |         4.11 |               3.85 |
+| LMDB (named keyspace)     |      5.13 |         4.28 |               4.02 |
+| Bolt                      |      5.71 |         5.31 |               5.36 |
+| LevelDB                   |    121    |       223    |             195    |
+| BadgerDB                  |    261    |       128    |             853    |
 ```
 
 #### 65,536 × 16-KiB random values
 
 ```txt
-|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
-| ------------------------- | ----------------- | -------------------- |
-| voidDB (default keyspace) |              1.82 |                 1.98 |
-| voidDB (named keyspace)   |              2.02 |                 2.06 |
-| LMDB (named keyspace)     |              2.72 |                 2.67 |
-| LMDB (default keyspace)   |              2.81 |                 2.74 |
-| Bolt                      |              3.66 |                 4.17 |
-| LevelDB                   |             28.3  |                34.7  |
-| BadgerDB                  |             83.2  |                46.3  |
+|                   (μs/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| voidDB (default keyspace) |      1.82 |         1.98 |               1.80 |
+| voidDB (named keyspace)   |      2.02 |         2.06 |               1.91 |
+| LMDB (named keyspace)     |      2.72 |         2.67 |               2.65 |
+| LMDB (default keyspace)   |      2.81 |         2.74 |               2.71 |
+| Bolt                      |      3.66 |         4.17 |               4.19 |
+| LevelDB                   |     28.3  |        34.7  |              50.9  |
+| BadgerDB                  |     83.2  |        46.3  |             166    |
 ```
 
 #### 1,048,576 × 1-KiB random values
 
 ```txt
-|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
-| ------------------------- | ----------------- | -------------------- |
-| LMDB (default keyspace)   |              2.33 |                 2.65 |
-| LMDB (named keyspace)     |              2.44 |                 2.67 |
-| voidDB (named keyspace)   |              2.68 |                 2.12 |
-| voidDB (default keyspace) |              3.30 |                 2.77 |
-| LevelDB                   |             30.2  |                45.0  |
-| Bolt                      | (timed out)       | (timed out)          |
-| BadgerDB                  | (crashed)         | (crashed)            |
+|                   (μs/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| voidDB (named keyspace)   |      2.68 |         2.12 |               2.66 |
+| LMDB (default keyspace)   |      2.33 |         2.65 |               2.91 |
+| LMDB (named keyspace)     |      2.44 |         2.67 |               2.89 |
+| voidDB (default keyspace) |      3.30 |         2.77 |               2.67 |
+| BadgerDB                  |     23.8  |        21.8  |             112    |
+| LevelDB                   |     30.2  |        45.0  |              37.9  |
+| Bolt                      | timed out | timed out    | timed out          |
 ```
 
 ### GetNext
@@ -136,43 +136,43 @@ series).
 #### 4,096 × 256-KiB random values
 
 ```txt
-|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
-| ------------------------- | ----------------- | -------------------- |
-| voidDB (named keyspace)   |              1.20 |                 .995 |
-| voidDB (default keyspace) |              1.18 |                1.02  |
-| Bolt                      |              2.30 |                1.74  |
-| LMDB (named keyspace)     |              4.71 |                3.71  |
-| LMDB (default keyspace)   |              4.73 |                3.77  |
-| LevelDB                   |            104    |              114     |
-| BadgerDB                  |            257    |               72.1   |
+|                   (μs/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| voidDB (named keyspace)   |      1.20 |         .995 |               1.08 |
+| voidDB (default keyspace) |      1.18 |        1.02  |               1.23 |
+| Bolt                      |      2.30 |        1.74  |               1.88 |
+| LMDB (named keyspace)     |      4.71 |        3.71  |               3.47 |
+| LMDB (default keyspace)   |      4.73 |        3.77  |               3.52 |
+| LevelDB                   |    104    |      114     |             162    |
+| BadgerDB                  |    257    |       72.1   |             500    |
 ```
 
 #### 65,536 × 16-KiB random values
 
 ```txt
-|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
-| ------------------------- | ----------------- | -------------------- |
-| voidDB (default keyspace) |              .922 |                 .733 |
-| voidDB (named keyspace)   |              .957 |                 .727 |
-| Bolt                      |             1.20  |                 .954 |
-| LMDB (default keyspace)   |             1.97  |                1.58  |
-| LMDB (named keyspace)     |             1.98  |                1.55  |
-| BadgerDB                  |            11.5   |               10.1   |
-| LevelDB                   |            55.8   |               15.1   |
+|                   (μs/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| voidDB (default keyspace) |      .922 |         .733 |               .824 |
+| voidDB (named keyspace)   |      .957 |         .727 |               .826 |
+| Bolt                      |     1.20  |         .954 |               .972 |
+| LMDB (named keyspace)     |     1.98  |        1.55  |              1.48  |
+| LMDB (default keyspace)   |     1.97  |        1.58  |              1.50  |
+| BadgerDB                  |    11.5   |       10.1   | crashed            |
+| LevelDB                   |    55.8   |       15.1   |             26.9   |
 ```
 
 #### 1,048,576 × 1-KiB random values
 
 ```txt
-|                           | AMD Milan (μs/op) | Ampere Altra (μs/op) |
-| ------------------------- | ----------------- | -------------------- |
-| LMDB (named keyspace)     |              .677 |                 .571 |
-| LMDB (default keyspace)   |              .705 |                 .573 |
-| voidDB (default keyspace) |              .845 |                 .280 |
-| voidDB (named keyspace)   |             1.03  |                1.51  |
-| LevelDB                   |            20.6   |              237     |
-| Bolt                      | (timed out)       | (timed out)          |
-| BadgerDB                  | (crashed)         | (crashed)            |
+|                   (μs/op) | AMD Milan | Ampere Altra | Intel Cascade Lake |
+| ------------------------- | --------- | ------------ | ------------------ |
+| LMDB (named keyspace)     |      .677 |         .571 |               .700 |
+| LMDB (default keyspace)   |      .705 |         .573 |               .700 |
+| voidDB (default keyspace) |      .845 |         .280 |              1.68  |
+| voidDB (named keyspace)   |     1.03  |        1.51  |              1.37  |
+| BadgerDB                  |    18.1   |       24.0   |             57.2   |
+| LevelDB                   |    20.6   |      237     |              6.30  |
+| Bolt                      | timed out | timed out    | timed out          |
 ```
 
 ## Getting Started
