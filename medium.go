@@ -60,7 +60,7 @@ func (txn medium) Free(offset, length int) {
 
 	length = align(length)
 
-	switch _, cool = txn.coolList[offset]; cool {
+	switch _, cool = txn.saveList[offset]; cool {
 	case true:
 		txn.freeCool[length] = append(txn.freeCool[length], offset)
 
@@ -89,8 +89,6 @@ func (txn medium) getFreePagePointer(size int) (pointer int) {
 	if e != nil {
 		pointer = txn.getFreePageNew(size)
 	}
-
-	txn.coolList[pointer] = struct{}{}
 
 	return
 }
@@ -136,8 +134,6 @@ func (txn medium) getFreePageNew(size int) (pointer int) {
 	if size < pageSize {
 		for p = pointer + size; p < pointer+pageSize; p += size {
 			txn.freeCool[size] = append(txn.freeCool[size], p)
-
-			txn.coolList[p] = struct{}{}
 		}
 
 		size = pageSize

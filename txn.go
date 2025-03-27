@@ -28,7 +28,6 @@ type Txn struct {
 	saveList map[int][]byte
 	freeWarm map[int][]int
 	freeCool map[int][]int
-	coolList map[int]struct{}
 
 	*cursor.Cursor
 }
@@ -183,7 +182,6 @@ func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 		saveList: make(map[int][]byte),
 		freeWarm: make(map[int][]int),
 		freeCool: make(map[int][]int),
-		coolList: make(map[int]struct{}),
 	}
 
 	e = txn.getMeta()
