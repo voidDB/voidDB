@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bmatsuo/lmdb-go/lmdb"
+	"github.com/PowerDNS/lmdb-go/lmdb"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
