@@ -193,19 +193,9 @@ func (void *Void) Update(mustSync bool, operation func(*Txn) error) (e error) {
 // OpenVoid.
 func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 	var (
-		stat  os.FileInfo
 		sync  syncFunc
 		write writeFunc
 	)
-
-	stat, e = void.file.Stat()
-	if e != nil {
-		return
-	}
-
-	if int(stat.Size()) > cap(void.mmap) {
-		return nil, common.ErrorResized
-	}
 
 	if !readonly {
 		write = void.write
@@ -224,6 +214,10 @@ func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 	)
 	if e != nil {
 		return
+	}
+
+	if txn.meta.getFrontierPointer() > cap(void.mmap) {
+		return nil, common.ErrorResized
 	}
 
 	return
