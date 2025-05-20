@@ -3,7 +3,7 @@ package voidDB
 import (
 	"bytes"
 	"hash"
-	"hash/fnv"
+	"hash/crc32"
 	"time"
 
 	"github.com/voidDB/voidDB/common"
@@ -14,13 +14,16 @@ const (
 	pageSize = common.PageSize
 	lineSize = common.LineSize
 	wordSize = common.WordSize
+	halfSize = common.HalfSize
 
 	metaMagic = "voidMETA"
-	version   = 0
+	version   = 1 // broken compatibility with v0.1.x
 )
 
 var (
-	fnvHash hash.Hash64 = fnv.New64a()
+	crcHash hash.Hash32 = crc32.New(
+		crc32.MakeTable(crc32.IEEE),
+	)
 )
 
 type voidMeta []byte
@@ -185,21 +188,21 @@ func (meta voidMeta) setFrontierPointer(pointer int) {
 }
 
 func (meta voidMeta) checksum() []byte {
-	return common.Field(meta, 7*wordSize, wordSize)
+	return common.Field(meta, 6*wordSize, halfSize)
 }
 
 func (meta voidMeta) computeChecksum() []byte {
-	fnvHash.Reset()
+	crcHash.Reset()
 
-	fnvHash.Write(meta[:7*wordSize])
+	crcHash.Write(meta[:6*wordSize])
 
-	fnvHash.Write(
-		make([]byte, wordSize),
+	crcHash.Write(
+		make([]byte, 2*wordSize),
 	)
 
-	fnvHash.Write(meta[8*wordSize:])
+	crcHash.Write(meta[8*wordSize:])
 
-	return fnvHash.Sum(nil)
+	return crcHash.Sum(nil)
 }
 
 func (meta voidMeta) setChecksum() {
