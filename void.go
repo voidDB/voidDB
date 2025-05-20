@@ -201,7 +201,7 @@ func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 		write = void.write
 
 		if mustSync {
-			sync = void.file.Sync
+			sync = void.fsync
 		}
 	}
 
@@ -258,6 +258,12 @@ func (void *Void) write(data []byte, offset int) (e error) {
 	}
 
 	return
+}
+
+func (void *Void) fsync() error {
+	return syscall.Fdatasync(
+		int(void.file.Fd()),
+	)
 }
 
 func logarithm(size int) (exp int) {
