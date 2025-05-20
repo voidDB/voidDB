@@ -16,10 +16,10 @@ const (
 )
 
 type ReaderTable struct {
-	OldestTxn int
-
 	file *os.File
 	mmap []byte
+
+	locked map[int]struct{}
 }
 
 func NewReaderTable(path string) (e error) {
@@ -41,7 +41,9 @@ func NewReaderTable(path string) (e error) {
 }
 
 func OpenReaderTable(path string) (table *ReaderTable, e error) {
-	table = new(ReaderTable)
+	table = &ReaderTable{
+		locked: make(map[int]struct{}),
+	}
 
 	table.file, e = os.OpenFile(path+pathSuffix, os.O_RDWR, 0)
 	if e != nil {
@@ -59,18 +61,18 @@ func OpenReaderTable(path string) (table *ReaderTable, e error) {
 		return
 	}
 
-	table.OldestTxn = table.oldestTxn()
-
 	return
 }
 
-func (table *ReaderTable) AcquireSlot(txnID int) (e error) {
+func (table *ReaderTable) AcquireSlot(txnID int) (
+	releaseSlot func() error, e error,
+) {
 	var (
 		index int
 	)
 
 	for index = 0; index < maxNReaders; index++ {
-		e = table.lockSlot(index)
+		releaseSlot, e = table.lockSlot(index)
 		if e == nil {
 			break
 		}
@@ -98,7 +100,7 @@ func (table *ReaderTable) Close() (e error) {
 	return
 }
 
-func (table *ReaderTable) oldestTxn() (oldest int) {
+func (table *ReaderTable) OldestReader() (oldest int) {
 	var (
 		e     error
 		index int
@@ -153,31 +155,64 @@ func (table *ReaderTable) slotLength() int {
 	return wordSize
 }
 
-func (table *ReaderTable) lockSlot(index int) error {
+func (table *ReaderTable) lockSlot(index int) (
+	unlockSlot func() error, e error,
+) {
 	var (
-		flock = &syscall.Flock_t{
-			Type:   syscall.F_WRLCK,
-			Whence: io.SeekStart,
-			Start:  int64(table.slotOffset(index)),
-			Len:    int64(table.slotLength()),
-		}
+		flock *syscall.Flock_t
 	)
 
-	return syscall.FcntlFlock(
+	if table.slotIsLocked(index) {
+		return nil, syscall.EWOULDBLOCK
+	}
+
+	table.locked[index] = struct{}{}
+
+	flock = &syscall.Flock_t{
+		Type:   syscall.F_WRLCK,
+		Whence: io.SeekStart,
+		Start:  int64(table.slotOffset(index)),
+		Len:    int64(table.slotLength()),
+	}
+
+	e = syscall.FcntlFlock(
 		table.file.Fd(),
 		fOFDSetlk, // process-indepedent; released when file desc. closed
 		flock,
 	)
+	if e != nil {
+		return
+	}
+
+	unlockSlot = func() error {
+		defer delete(table.locked, index)
+
+		flock.Type = syscall.F_UNLCK
+
+		return syscall.FcntlFlock(
+			table.file.Fd(),
+			fOFDSetlk,
+			flock,
+		)
+	}
+
+	return
 }
 
-func (table *ReaderTable) slotIsLocked(index int) bool {
+func (table *ReaderTable) slotIsLocked(index int) (locked bool) {
 	var (
-		flock = &syscall.Flock_t{
-			Whence: io.SeekStart,
-			Start:  int64(table.slotOffset(index)),
-			Len:    int64(table.slotLength()),
-		}
+		flock *syscall.Flock_t
 	)
+
+	if _, locked = table.locked[index]; locked {
+		return
+	}
+
+	flock = &syscall.Flock_t{
+		Whence: io.SeekStart,
+		Start:  int64(table.slotOffset(index)),
+		Len:    int64(table.slotLength()),
+	}
 
 	syscall.FcntlFlock(
 		table.file.Fd(),
@@ -185,11 +220,7 @@ func (table *ReaderTable) slotIsLocked(index int) bool {
 		flock,
 	)
 
-	if flock.Type == syscall.F_UNLCK {
-		return false
-	}
-
-	return true
+	return flock.Type != syscall.F_UNLCK
 }
 
 func (table *ReaderTable) getTxnID(index int) (txnID int) {

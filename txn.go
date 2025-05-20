@@ -17,12 +17,12 @@ import (
 // that transaction and any changes made within it. See [*Void.BeginTxn] for
 // more information.
 type Txn struct {
-	lockfile *os.File
-	readers  *reader.ReaderTable
-
 	read  readFunc
 	write writeFunc
 	sync  syncFunc
+	abort func() error
+
+	oldestReader int
 
 	meta     voidMeta
 	saveList map[int][]byte
@@ -103,17 +103,7 @@ func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 // utilisation. Following an invocation of Abort, the transaction handle must
 // no longer be used.
 func (txn *Txn) Abort() (e error) {
-	switch {
-	case txn.lockfile != nil:
-		e = txn.lockfile.Close()
-
-		fallthrough
-
-	default:
-		e = errors.Join(e,
-			txn.readers.Close(),
-		)
-	}
+	e = txn.abort()
 
 	*txn = Txn{}
 
@@ -172,9 +162,15 @@ func (txn *Txn) Commit() (e error) {
 	return
 }
 
-func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
+func newTxn(path string, readerTable *reader.ReaderTable,
+	read readFunc, write writeFunc, sync syncFunc,
+) (
 	txn *Txn, e error,
 ) {
+	var (
+		lockfile *os.File
+	)
+
 	txn = &Txn{
 		read:     read,
 		write:    write,
@@ -195,16 +191,11 @@ func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 		txn.meta.getSerialNumber() + 1,
 	)
 
-	txn.readers, e = reader.OpenReaderTable(path)
-	if e != nil {
-		return
-	}
-
 	switch {
 	case write == nil:
 		txn.write = denyPermission
 
-		e = txn.readers.AcquireSlot(
+		txn.abort, e = readerTable.AcquireSlot(
 			txn.meta.getSerialNumber(),
 		)
 		if e != nil {
@@ -212,18 +203,22 @@ func newTxn(path string, read readFunc, write writeFunc, sync syncFunc) (
 		}
 
 	default:
-		txn.lockfile, e = os.OpenFile(path, os.O_RDONLY, 0)
+		lockfile, e = os.OpenFile(path, os.O_RDONLY, 0)
 		if e != nil {
 			return
 		}
 
 		e = syscall.Flock(
-			int(txn.lockfile.Fd()),
+			int(lockfile.Fd()),
 			syscall.LOCK_EX|syscall.LOCK_NB,
 		)
 		if e != nil {
 			return
 		}
+
+		txn.oldestReader = readerTable.OldestReader()
+
+		txn.abort = lockfile.Close
 	}
 
 	txn.Cursor = cursor.NewCursor(medium{txn, nil},

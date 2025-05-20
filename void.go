@@ -15,6 +15,7 @@ import (
 type Void struct {
 	file *os.File
 	mmap []byte
+	rtbl *reader.ReaderTable
 }
 
 // NewVoid creates and initialises a database file and its reader table at path
@@ -103,6 +104,11 @@ func OpenVoid(path string, capacity int) (void *Void, e error) {
 		syscall.PROT_READ,
 		syscall.MAP_SHARED,
 	)
+	if e != nil {
+		return
+	}
+
+	void.rtbl, e = reader.OpenReaderTable(path)
 	if e != nil {
 		return
 	}
@@ -211,6 +217,7 @@ func (void *Void) BeginTxn(readonly, mustSync bool) (txn *Txn, e error) {
 
 	txn, e = newTxn(
 		void.file.Name(),
+		void.rtbl,
 		void.read,
 		write,
 		sync,
@@ -232,6 +239,7 @@ func (void *Void) Close() (e error) {
 	e = errors.Join(
 		void.file.Close(),
 		syscall.Munmap(void.mmap),
+		void.rtbl.Close(),
 	)
 
 	*void = Void{}

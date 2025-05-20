@@ -121,7 +121,7 @@ func (txn medium) getFreePageCold(size int) (pointer int, e error) {
 		queue fifo.FIFO = txn.meta.freeQueue(size)
 	)
 
-	return queue.Dequeue(txn, txn.readers.OldestTxn)
+	return queue.Dequeue(txn, txn.oldestReader)
 }
 
 func (txn medium) getFreePageNew(size int) (pointer int) {
