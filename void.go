@@ -260,12 +260,6 @@ func (void *Void) write(data []byte, offset int) (e error) {
 	return
 }
 
-func (void *Void) fsync() error {
-	return syscall.Fdatasync(
-		int(void.file.Fd()),
-	)
-}
-
 func logarithm(size int) (exp int) {
 	for exp = 3; 1<<exp < size; exp++ {
 		continue
