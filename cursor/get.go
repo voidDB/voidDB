@@ -2,7 +2,6 @@ package cursor
 
 import (
 	"github.com/voidDB/voidDB/common"
-	"github.com/voidDB/voidDB/link"
 	"github.com/voidDB/voidDB/node"
 )
 
@@ -30,7 +29,7 @@ func (cursor *Cursor) Get(key []byte) (value []byte, e error) {
 //
 // CAUTION: See [*Cursor.Get].
 func (cursor *Cursor) GetFirst() (key, value []byte, e error) {
-	cursor.reset()
+	cursor.Place(First)
 
 	return cursor.GetNext()
 }
@@ -40,9 +39,7 @@ func (cursor *Cursor) GetFirst() (key, value []byte, e error) {
 //
 // CAUTION: See [*Cursor.Get].
 func (cursor *Cursor) GetLast() (key, value []byte, e error) {
-	cursor.reset()
-
-	cursor.index = node.MaxNodeLength
+	cursor.Place(Last)
 
 	return cursor.GetPrev()
 }
@@ -62,41 +59,28 @@ func (cursor *Cursor) get(key []byte) (value []byte, e error) {
 	cursor.index, pointer, length = curNode.Search(key)
 
 	switch {
-	case pointer&graveyard > 0:
-		fallthrough
-
-	case pointer == tombstone:
+	case common.Pointer(pointer).IsDeleted():
 		fallthrough
 
 	case pointer == 0:
 		return nil, common.ErrorNotFound
 
 	case length > 0:
-		value, _ = cursor.medium.Load(pointer, length)
-
-		return
+		return cursor.medium.Data(pointer, length), nil
 	}
 
-	cursor.stack = append(cursor.stack,
-		ancestor{cursor.offset, cursor.index},
-	)
-
-	cursor.offset = pointer
+	cursor.descend(pointer, -1)
 
 	return cursor.get(key)
 }
 
-func (cursor *Cursor) getLeafMetaReset(key []byte) (
-	linkMeta link.Metadata, e error,
-) {
+func (cursor *Cursor) getLeafMetaReset(key []byte) (meta []byte, e error) {
 	cursor.reset()
 
 	return cursor.getLeafMeta(key)
 }
 
-func (cursor *Cursor) getLeafMeta(key []byte) (
-	linkMeta link.Metadata, e error,
-) {
+func (cursor *Cursor) getLeafMeta(key []byte) (meta []byte, e error) {
 	var (
 		curNode node.Node
 		length  int
@@ -111,16 +95,16 @@ func (cursor *Cursor) getLeafMeta(key []byte) (
 	cursor.index, pointer, length = curNode.Search(key)
 
 	switch {
-	case pointer&graveyard > 0:
+	case common.Pointer(pointer).IsGraveyard():
 		break
 
-	case pointer == tombstone:
+	case common.Pointer(pointer).IsTombstone():
 		e = common.ErrorDeleted
 
 		fallthrough
 
 	case length > 0:
-		linkMeta = curNode.ValueOrChildMeta(cursor.index)
+		meta = curNode.ValueOrChildMeta(cursor.index)
 
 		return
 
@@ -128,11 +112,10 @@ func (cursor *Cursor) getLeafMeta(key []byte) (
 		return nil, common.ErrorNotFound
 	}
 
-	cursor.stack = append(cursor.stack,
-		ancestor{cursor.offset, cursor.index},
+	cursor.descend(
+		common.Pointer(pointer).Clean(),
+		-1,
 	)
-
-	cursor.offset = pointer &^ graveyard
 
 	return cursor.getLeafMeta(key)
 }

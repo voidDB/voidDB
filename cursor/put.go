@@ -5,7 +5,6 @@ import (
 	"syscall"
 
 	"github.com/voidDB/voidDB/common"
-	"github.com/voidDB/voidDB/link"
 	"github.com/voidDB/voidDB/node"
 )
 
@@ -22,10 +21,12 @@ const (
 // CAUTION: The data in value must not be modified until the transaction has
 // been successfully committed.
 func (cursor *Cursor) Put(key, value []byte) (e error) {
-	return cursor.put(key, value, nil)
+	return cursor.put(key, value,
+		cursor.medium.Meta(),
+	)
 }
 
-func (cursor *Cursor) put(key, value, linkMeta link.Metadata) (e error) {
+func (cursor *Cursor) put(key, value, metadata []byte) (e error) {
 	var (
 		newRoot  node.Node
 		pointer0 int
@@ -49,12 +50,8 @@ func (cursor *Cursor) put(key, value, linkMeta link.Metadata) (e error) {
 
 	cursor.reset()
 
-	if linkMeta == nil {
-		linkMeta = cursor.medium.Meta()
-	}
-
 	pointer0, pointer1, promoted, e = put(cursor.medium, cursor.offset,
-		cursor.medium.Save(value), len(value), key, linkMeta,
+		cursor.medium.Save(value), len(value), key, metadata,
 	)
 	if e != nil {
 		return
@@ -80,8 +77,7 @@ func (cursor *Cursor) put(key, value, linkMeta link.Metadata) (e error) {
 	return
 }
 
-func put(medium Medium, offset, putPointer, putLength int, key []byte,
-	linkMeta link.Metadata,
+func put(medium Medium, offset, putPointer, putLength int, key, metadata []byte,
 ) (
 	pointer0, pointer1 int, promoted []byte, e error,
 ) {
@@ -94,6 +90,7 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte,
 		index   int
 		length  int
 		pointer int
+		replace bool
 	)
 
 	oldNode, dirty, e = getNode(medium, offset, true)
@@ -103,25 +100,19 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte,
 
 	index, pointer, length = oldNode.Search(key)
 
-	pointer &^= graveyard
-
 	switch {
-	case pointer == 0:
-		newNode0, newNode1, promoted = oldNode.Insert(index,
-			putPointer, 0, putLength, key, linkMeta, dirty,
-		)
+	case common.Pointer(pointer).IsTombstone():
+		replace = true
 
 	case length > 0:
 		medium.Free(pointer, length)
 
-		fallthrough
+		replace = true
 
-	case pointer == tombstone:
-		newNode0 = oldNode.Update(index, putPointer, putLength, linkMeta, dirty)
-
-	default:
-		pointer0, pointer1, promoted, e = put(medium, pointer,
-			putPointer, putLength, key, linkMeta,
+	case pointer > 0:
+		pointer0, pointer1, promoted, e = put(medium,
+			common.Pointer(pointer).Clean(),
+			putPointer, putLength, key, metadata,
 		)
 		if e != nil {
 			return
@@ -138,6 +129,15 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte,
 
 			pointer1 = 0
 		}
+
+	default:
+		newNode0, newNode1, promoted = oldNode.Insert(index,
+			putPointer, 0, putLength, key, metadata, dirty,
+		)
+	}
+
+	if replace {
+		newNode0 = oldNode.Update(index, putPointer, putLength, metadata, dirty)
 	}
 
 	pointer0 = medium.Save(newNode0)
@@ -146,14 +146,14 @@ func put(medium Medium, offset, putPointer, putLength int, key []byte,
 		return
 	}
 
-	if isGraveyard(newNode0) {
-		pointer0 |= graveyard
+	if newNode0.IsGraveyard() {
+		pointer0 = common.Pointer(pointer0).ToGraveyard()
 	}
 
 	pointer1 = medium.Save(newNode1)
 
-	if isGraveyard(newNode1) {
-		pointer1 |= graveyard
+	if newNode1.IsGraveyard() {
+		pointer1 = common.Pointer(pointer1).ToGraveyard()
 	}
 
 	return

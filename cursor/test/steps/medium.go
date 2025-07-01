@@ -33,8 +33,12 @@ func (m *Medium) Save(bytes []byte) (pointer int) {
 	return
 }
 
-func (m *Medium) Load(offset, length int) ([]byte, bool) {
-	return (*m)[offset : offset+length], false
+func (m *Medium) Page(offset int) ([]byte, bool) {
+	return common.Page(*m, offset), false
+}
+
+func (m *Medium) Data(offset, length int) []byte {
+	return common.Slice(*m, offset, length)
 }
 
 func (m *Medium) Free(offset, length int) {

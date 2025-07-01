@@ -15,6 +15,16 @@ func (txn medium) Meta() []byte {
 	return common.Field(txn.meta, 2*wordSize, 2*wordSize)
 }
 
+func (txn medium) Page(offset int) (page []byte, dirty bool) {
+	return txn.Load(offset, common.PageSize)
+}
+
+func (txn medium) Data(offset, length int) (data []byte) {
+	data, _ = txn.Load(offset, length)
+
+	return
+}
+
 func (txn medium) Load(offset, length int) (data []byte, dirty bool) {
 	data, dirty = txn.saveList[offset]
 

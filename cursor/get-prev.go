@@ -15,8 +15,6 @@ func (cursor *Cursor) GetPrev() (key, value []byte, e error) {
 	cursor.resume()
 
 	for {
-		cursor.index--
-
 		key, value, e = cursor.getPrev()
 
 		if !errors.Is(e, common.ErrorDeleted) {
@@ -34,18 +32,14 @@ func (cursor *Cursor) getPrev() (key, value []byte, e error) {
 		pointer int
 	)
 
+	cursor.index--
+
 	switch {
 	case cursor.index < 0 && len(cursor.stack) == 0:
-		e = common.ErrorNotFound
-
-		return
+		return nil, nil, common.ErrorNotFound
 
 	case cursor.index < 0:
-		cursor.offset, cursor.index =
-			cursor.stack[len(cursor.stack)-1].offset,
-			cursor.stack[len(cursor.stack)-1].index-1
-
-		cursor.stack = cursor.stack[:len(cursor.stack)-1]
+		cursor.ascend()
 
 		return cursor.getPrev()
 	}
@@ -62,30 +56,19 @@ func (cursor *Cursor) getPrev() (key, value []byte, e error) {
 	pointer, length = curNode.ValueOrChild(cursor.index)
 
 	switch {
-	case pointer&graveyard > 0:
-		fallthrough
-
-	case pointer == tombstone:
+	case common.Pointer(pointer).IsDeleted():
 		return nil, nil, common.ErrorDeleted
-
-	case pointer == 0:
-		cursor.index--
-
-		return cursor.getPrev()
 
 	case length > 0:
 		key = curNode.Key(cursor.index)
 
-		value, _ = cursor.medium.Load(pointer, length)
+		value = cursor.medium.Data(pointer, length)
 
 		return
+
+	case pointer > 0:
+		cursor.descend(pointer, node.MaxNodeLength)
 	}
-
-	cursor.stack = append(cursor.stack,
-		ancestor{cursor.offset, cursor.index},
-	)
-
-	cursor.offset, cursor.index = pointer, node.MaxNodeLength
 
 	return cursor.getPrev()
 }

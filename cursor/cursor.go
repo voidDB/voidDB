@@ -1,15 +1,20 @@
 package cursor
 
+type position struct {
+	offset int
+	index  int
+}
+
 // A Cursor enables storage, retrieval, destruction of, and bidirectional
 // iteration over key-value mappings in a keyspace via its methods. Out of the
 // box, it is not safe for concurrent use; an application intending to do so
 // should implement its own means of ensuring mutual exclusion.
 type Cursor struct {
 	medium Medium
-	offset int
-	index  int
-	stack  []ancestor
+	stack  []position
 	latest []byte
+
+	position
 }
 
 // NewCursor is a low-level constructor used by
@@ -25,10 +30,9 @@ func NewCursor(medium Medium, offset int) *Cursor {
 	)
 
 	return &Cursor{
-		medium: medium,
-		offset: offset,
-		index:  -1,
-		stack:  make([]ancestor, 0, maxStackDepth),
+		medium:   medium,
+		stack:    make([]position, 0, maxStackDepth),
+		position: position{offset, -1},
 	}
 }
 
@@ -58,7 +62,20 @@ func (cursor *Cursor) resume() {
 	return
 }
 
-type ancestor struct {
-	offset int
-	index  int
+func (cursor *Cursor) descend(offset, index int) {
+	cursor.stack = append(cursor.stack,
+		position{cursor.offset, cursor.index},
+	)
+
+	cursor.position = position{offset, index}
+
+	return
+}
+
+func (cursor *Cursor) ascend() {
+	cursor.position = cursor.stack[len(cursor.stack)-1]
+
+	cursor.stack = cursor.stack[:len(cursor.stack)-1]
+
+	return
 }
