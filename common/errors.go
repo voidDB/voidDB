@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"errors"
 )
 
@@ -12,3 +13,11 @@ var (
 	ErrorNotFound = errors.New("voidDB: record not found by key or cursor")
 	ErrorResized  = errors.New("voidDB: database file larger than memory map")
 )
+
+func ErrorIfNotEqual(a, b []byte, e error) error {
+	if bytes.Equal(a, b) {
+		return nil
+	}
+
+	return e
+}
