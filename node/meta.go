@@ -1,45 +1,48 @@
 package node
 
 import (
-	"bytes"
-
 	"github.com/voidDB/voidDB/common"
+)
+
+var (
+	nodeMagic = []byte("voidNODE")
 )
 
 type Meta []byte
 
 func (meta Meta) magic() []byte {
-	return common.Field(meta, 0, wordSize)
-}
-
-func (meta Meta) isNode() bool {
-	return bytes.Equal(
-		meta.magic(),
-		[]byte(nodeMagic),
-	)
+	return common.WordN(meta, 0)
 }
 
 func (meta Meta) setMagic() {
 	copy(
 		meta.magic(),
-		[]byte(nodeMagic),
+		nodeMagic,
 	)
 
 	return
 }
 
+func (meta Meta) vetMagic() error {
+	return common.ErrorIfNotEqual(
+		meta.magic(),
+		nodeMagic,
+		common.ErrorCorrupt,
+	)
+}
+
 func (meta Meta) length() []byte {
-	return common.Field(meta, wordSize, wordSize)
+	return common.WordN(meta, 1)
 }
 
 func (meta Meta) getLength() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		meta.length(),
 	)
 }
 
 func (meta Meta) setLength(length int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		meta.length(),
 		length,
 	)

@@ -1,10 +1,6 @@
 package node
 
-import (
-	"github.com/voidDB/voidDB/link"
-)
-
-func (node Node) Update(index, pointer, length int, metadata link.Metadata,
+func (node Node) Update(index, pointer, length int, elemMeta []byte,
 	inPlace bool,
 ) (
 	newNode Node,
@@ -14,19 +10,17 @@ func (node Node) Update(index, pointer, length int, metadata link.Metadata,
 		newNode = node
 
 	default:
-		newNode = make([]byte, pageSize)
-
-		copy(newNode, node)
+		newNode = node.copy()
 	}
 
 	switch {
 	case length < 0:
 		newNode.elem(index).setPointer(pointer)
 
-		newNode.elem(index).setLinkMetadata(metadata)
+		newNode.elem(index).setMeta(elemMeta)
 
 	default:
-		newNode.setValueOrChild(index, pointer, length, metadata)
+		newNode.setValueOrChild(index, pointer, length, elemMeta)
 	}
 
 	return

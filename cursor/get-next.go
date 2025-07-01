@@ -107,7 +107,7 @@ func (cursor *Cursor) getNextWithLeafMeta(minTxnID int) (
 		return
 	}
 
-	linkMeta = curNode.ValueOrChildLinkMetadata(cursor.index)
+	linkMeta = curNode.ValueOrChildMeta(cursor.index)
 
 	if linkMeta.TxnSerial().Int() < minTxnID {
 		return cursor.getNextWithLeafMeta(minTxnID)

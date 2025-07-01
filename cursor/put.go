@@ -4,12 +4,13 @@ import (
 	"math"
 	"syscall"
 
+	"github.com/voidDB/voidDB/common"
 	"github.com/voidDB/voidDB/link"
 	"github.com/voidDB/voidDB/node"
 )
 
 const (
-	MaxKeyLength   = node.MaxKeyLength
+	MaxKeyLength   = common.KeySize
 	MaxValueLength = math.MaxUint32
 )
 

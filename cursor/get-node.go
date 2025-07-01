@@ -10,9 +10,8 @@ func getNode(medium Medium, offset int, free bool) (
 ) {
 	n, dirty = medium.Load(offset, common.PageSize)
 
-	if !n.IsNode() {
-		e = common.ErrorCorrupt
-
+	e = n.VetMagic()
+	if e != nil {
 		return
 	}
 

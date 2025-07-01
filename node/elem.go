@@ -2,23 +2,22 @@ package node
 
 import (
 	"github.com/voidDB/voidDB/common"
-	"github.com/voidDB/voidDB/link"
 )
 
 type Elem []byte
 
 func (elem Elem) keyLen() []byte {
-	return common.Field(elem, 0, halfSize)
+	return common.HalfN(elem, 0)
 }
 
 func (elem Elem) getKeyLen() int {
-	return common.GetInt(
+	return common.GetIntFromHalf(
 		elem.keyLen(),
 	)
 }
 
 func (elem Elem) setKeyLen(length int) {
-	common.PutInt(
+	common.PutIntIntoHalf(
 		elem.keyLen(),
 		length,
 	)
@@ -27,17 +26,17 @@ func (elem Elem) setKeyLen(length int) {
 }
 
 func (elem Elem) valLen() []byte {
-	return common.Field(elem, halfSize, halfSize)
+	return common.HalfN(elem, 1)
 }
 
 func (elem Elem) getValLen() int {
-	return common.GetInt(
+	return common.GetIntFromHalf(
 		elem.valLen(),
 	)
 }
 
 func (elem Elem) setValLen(length int) {
-	common.PutInt(
+	common.PutIntIntoHalf(
 		elem.valLen(),
 		length,
 	)
@@ -46,17 +45,17 @@ func (elem Elem) setValLen(length int) {
 }
 
 func (elem Elem) pointer() []byte {
-	return common.Field(elem, wordSize, wordSize)
+	return common.WordN(elem, 1)
 }
 
 func (elem Elem) getPointer() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		elem.pointer(),
 	)
 }
 
 func (elem Elem) setPointer(pointer int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		elem.pointer(),
 		pointer,
 	)
@@ -64,14 +63,18 @@ func (elem Elem) setPointer(pointer int) {
 	return
 }
 
-func (elem Elem) linkMetadata() link.Metadata {
-	return common.Field(elem, 2*wordSize, 2*wordSize)
+func (elem Elem) meta() []byte {
+	return common.TwinN(elem, 1)
 }
 
-func (elem Elem) setLinkMetadata(metadata link.Metadata) {
+func (elem Elem) getMeta() []byte {
+	return elem.meta()
+}
+
+func (elem Elem) setMeta(meta []byte) {
 	copy(
-		elem.linkMetadata(),
-		metadata,
+		elem.meta(),
+		meta,
 	)
 
 	return

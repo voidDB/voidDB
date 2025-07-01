@@ -1,18 +1,13 @@
 package node
 
-import (
-	"github.com/voidDB/voidDB/link"
-)
-
-func (node Node) Insert(
-	index, pointerL, pointerR, length int, key, metadata link.Metadata,
-	inPlace bool,
+func (node Node) Insert(index, pointerL, pointerR, length int,
+	key, elemMeta []byte, inPlace bool,
 ) (
 	newNode, _ Node, _ []byte,
 ) {
 	var (
 		i          int
-		nodeLength int = node.Length()
+		nodeLength int = node.getLength()
 	)
 
 	switch {
@@ -35,10 +30,10 @@ func (node Node) Insert(
 
 	newNode.setKey(index, key)
 
-	newNode.setValueOrChild(index, pointerL, length, metadata)
+	newNode.setValueOrChild(index, pointerL, length, elemMeta)
 
 	if pointerR > 0 {
-		newNode.setValueOrChild(index+1, pointerR, length, metadata)
+		newNode.setValueOrChild(index+1, pointerR, length, elemMeta)
 	}
 
 	if nodeLength+1 == MaxNodeLength {
@@ -69,12 +64,12 @@ func (node Node) split() (newNodeL, newNodeR Node, promoted []byte) {
 		case i == MaxNodeLength/2 && node.elem(i).getValLen() == 0:
 			copyElem(newNodeL, node, i, 0)
 
-			promoted = node.Key(i)
+			promoted = node.getKey(i)
 
 			shift -= 1
 
 		case i == MaxNodeLength/2:
-			promoted = node.Key(i - 1)
+			promoted = node.getKey(i - 1)
 
 			fallthrough
 

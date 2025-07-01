@@ -120,7 +120,7 @@ func (cursor *Cursor) getLeafMeta(key []byte) (
 		fallthrough
 
 	case length > 0:
-		linkMeta = curNode.ValueOrChildLinkMetadata(cursor.index)
+		linkMeta = curNode.ValueOrChildMeta(cursor.index)
 
 		return
 

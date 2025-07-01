@@ -9,9 +9,9 @@ func (node Node) Search(key []byte) (index, pointer, length int) {
 		result int
 	)
 
-	for index = 0; index < node.Length(); index++ {
+	for index = 0; index < node.getLength(); index++ {
 		result = bytes.Compare(key,
-			node.Key(index),
+			node.getKey(index),
 		)
 
 		if result < 1 {
@@ -19,7 +19,7 @@ func (node Node) Search(key []byte) (index, pointer, length int) {
 		}
 	}
 
-	pointer, length = node.ValueOrChild(index)
+	pointer, length = node.getValueOrChild(index)
 
 	switch {
 	case length > 0 && result == 0: // leaf node, record found
