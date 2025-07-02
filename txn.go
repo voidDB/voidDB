@@ -285,8 +285,6 @@ func (txn *Txn) getMeta() (e error) {
 }
 
 func (txn *Txn) putMeta() error {
-	txn.meta.setChecksum()
-
 	return txn.write(txn.meta,
 		txn.meta.getSerialNumber()%2*pageSize,
 	)

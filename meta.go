@@ -2,8 +2,6 @@ package voidDB
 
 import (
 	"bytes"
-	"hash"
-	"hash/crc32"
 	"time"
 
 	"github.com/voidDB/voidDB/common"
@@ -18,12 +16,6 @@ const (
 
 	metaMagic = "voidMETA"
 	version   = 1 // broken compatibility with v0.1.x
-)
-
-var (
-	crcHash hash.Hash32 = crc32.New(
-		crc32.MakeTable(crc32.IEEE),
-	)
 )
 
 type voidMeta []byte
@@ -46,8 +38,6 @@ func newMetaInit() (meta voidMeta) {
 	meta.setRootNodePointer(2 * pageSize)
 
 	meta.setFrontierPointer(3 * pageSize)
-
-	meta.setChecksum()
 
 	return
 }
@@ -100,9 +90,6 @@ func (meta voidMeta) setVersion() {
 
 func (meta voidMeta) isMeta() bool {
 	switch {
-	case !meta.checksumOK():
-		return false
-
 	case !bytes.Equal(meta.magic(), []byte(metaMagic)):
 		return false
 
@@ -191,40 +178,6 @@ func (meta voidMeta) setFrontierPointer(pointer int) {
 	)
 
 	return
-}
-
-func (meta voidMeta) checksum() []byte {
-	return common.Field(meta, 6*wordSize, halfSize)
-}
-
-func (meta voidMeta) computeChecksum() []byte {
-	crcHash.Reset()
-
-	crcHash.Write(meta[:6*wordSize])
-
-	crcHash.Write(
-		make([]byte, 2*wordSize),
-	)
-
-	crcHash.Write(meta[8*wordSize:])
-
-	return crcHash.Sum(nil)
-}
-
-func (meta voidMeta) setChecksum() {
-	copy(
-		meta.checksum(),
-		meta.computeChecksum(),
-	)
-
-	return
-}
-
-func (meta voidMeta) checksumOK() bool {
-	return bytes.Equal(
-		meta.checksum(),
-		meta.computeChecksum(),
-	)
 }
 
 func (meta voidMeta) freeQueue(size int) fifo.FIFO {
