@@ -52,8 +52,14 @@ func newMetaInit() (meta voidMeta) {
 	return
 }
 
-func (meta voidMeta) makeCopy() (copi voidMeta) {
-	copi = make([]byte, pageSize)
+func (meta voidMeta) makeCopy(concise bool) (copi voidMeta) {
+	switch concise {
+	case true:
+		copi = make([]byte, lineSize)
+
+	default:
+		copi = make([]byte, pageSize)
+	}
 
 	copy(copi, meta)
 

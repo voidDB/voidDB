@@ -192,7 +192,7 @@ func newTxn(path string, readerTable *reader.ReaderTable,
 	)
 
 	switch {
-	case write == nil:
+	case txn.isReadOnly():
 		txn.write = denyPermission
 
 		txn.abort, e = readerTable.AcquireHold(
@@ -228,6 +228,10 @@ func newTxn(path string, readerTable *reader.ReaderTable,
 	return
 }
 
+func (txn *Txn) isReadOnly() bool {
+	return txn.write == nil
+}
+
 func (txn *Txn) setRootNodePointer(keyspace []byte, pointer int) (e error) {
 	var (
 		value []byte
@@ -255,20 +259,24 @@ func (txn *Txn) getMeta() (e error) {
 	switch {
 	case meta0.isMeta() && meta1.isMeta() &&
 		meta0.getSerialNumber() < meta1.getSerialNumber():
-		txn.meta = meta1.makeCopy()
+		txn.meta = meta1
 
 	case meta0.isMeta() && meta1.isMeta():
-		txn.meta = meta0.makeCopy()
+		txn.meta = meta0
 
 	case meta0.isMeta():
-		txn.meta = meta0.makeCopy()
+		txn.meta = meta0
 
 	case meta1.isMeta():
-		txn.meta = meta1.makeCopy()
+		txn.meta = meta1
 
 	default:
 		e = common.ErrorInvalid
 	}
+
+	txn.meta = txn.meta.makeCopy(
+		txn.isReadOnly(),
+	)
 
 	return
 }
