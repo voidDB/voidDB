@@ -172,12 +172,9 @@ func newTxn(path string, readerTable *reader.ReaderTable,
 	)
 
 	txn = &Txn{
-		read:     read,
-		write:    write,
-		sync:     sync,
-		saveList: make(map[int][]byte),
-		freeWarm: make(map[int][]int),
-		freeCool: make(map[int][]int),
+		read:  read,
+		write: write,
+		sync:  sync,
 	}
 
 	e = txn.getMeta()
@@ -203,6 +200,12 @@ func newTxn(path string, readerTable *reader.ReaderTable,
 		}
 
 	default:
+		txn.saveList = make(map[int][]byte)
+
+		txn.freeWarm = make(map[int][]int)
+
+		txn.freeCool = make(map[int][]int)
+
 		lockfile, e = os.OpenFile(path, os.O_RDONLY, 0)
 		if e != nil {
 			return
