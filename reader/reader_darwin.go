@@ -1,5 +1,13 @@
 //go:build darwin
 
+// # Acknowledgements
+//
+// Had Nuno Cruces ([@ncruces], [u/ncruces]) not enlightened me to the fact that
+// open file description (OFD) locks are supported by the XNU kernel, voidDB
+// would most likely have remained unavailable on macOS.
+//
+// [@ncruces]: https://github.com/ncruces
+// [u/ncruces]: https://www.reddit.com/user/ncruces/
 package reader
 
 const (

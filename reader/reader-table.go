@@ -1,51 +1,49 @@
 package reader
 
 import (
+	"errors"
 	"io"
 	"math"
 	"os"
+	"sync"
 	"syscall"
 
 	"github.com/voidDB/voidDB/common"
 )
 
 const (
+	extension   = ".readers"
 	maxNReaders = 1 << 22 // maximum number of PIDs allowed on most systems
-	pathSuffix  = ".readers"
-	wordSize    = common.WordSize
+	slotLength  = common.WordSize
 )
 
 type ReaderTable struct {
 	file *os.File
 	mmap []byte
 
-	locked map[int]struct{}
+	index int
+	mutex sync.Mutex
+	idPtr []*int
 }
 
 func NewReaderTable(path string) (e error) {
+
 	var (
 		file *os.File
 	)
 
-	file, e = os.Create(path + pathSuffix)
+	file, e = os.Create(path + extension)
 	if e != nil {
 		return
 	}
 
-	e = file.Close()
-	if e != nil {
-		return
-	}
-
-	return
+	return file.Close()
 }
 
 func OpenReaderTable(path string) (table *ReaderTable, e error) {
-	table = &ReaderTable{
-		locked: make(map[int]struct{}),
-	}
+	table = new(ReaderTable)
 
-	table.file, e = os.OpenFile(path+pathSuffix, os.O_RDWR, 0)
+	table.file, e = os.OpenFile(path+extension, os.O_RDWR, 0)
 	if e != nil {
 		return
 	}
@@ -53,7 +51,7 @@ func OpenReaderTable(path string) (table *ReaderTable, e error) {
 	table.mmap, e = syscall.Mmap(
 		int(table.file.Fd()),
 		0,
-		maxNReaders*table.slotLength(),
+		maxNReaders*slotLength,
 		syscall.PROT_READ,
 		syscall.MAP_SHARED,
 	)
@@ -61,43 +59,56 @@ func OpenReaderTable(path string) (table *ReaderTable, e error) {
 		return
 	}
 
+	table.index, e = table.acquireSlot()
+	if e != nil {
+		return
+	}
+
 	return
 }
 
-func (table *ReaderTable) AcquireSlot(txnID int) (
-	releaseSlot func() error, e error,
-) {
-	var (
-		index int
-	)
-
+func (table *ReaderTable) acquireSlot() (index int, e error) {
 	for index = 0; index < maxNReaders; index++ {
-		releaseSlot, e = table.lockSlot(index)
+		e = table.lockSlot(index)
 		if e == nil {
-			break
+			return
 		}
 	}
 
-	e = table.setTxnID(index, txnID)
-	if e != nil {
-		return
-	}
-
 	return
 }
 
-func (table *ReaderTable) Close() (e error) {
-	e = table.file.Close()
-	if e != nil {
-		return
+func (table *ReaderTable) Close() error {
+	return errors.Join(
+		table.file.Close(),
+		syscall.Munmap(table.mmap),
+	)
+}
+
+func (table *ReaderTable) AcquireHold(txnID int) (
+	releaseHold func() error, e error,
+) {
+	var (
+		p *int = &txnID
+	)
+
+	table.mutex.Lock()
+
+	defer table.mutex.Unlock()
+
+	table.idPtr = append(table.idPtr, p)
+
+	releaseHold = func() error {
+		table.mutex.Lock()
+
+		defer table.mutex.Unlock()
+
+		*p = -1
+
+		return table.update()
 	}
 
-	e = syscall.Munmap(table.mmap)
-	if e != nil {
-		return
-	}
-
-	return
+	return releaseHold, table.update()
 }
 
 func (table *ReaderTable) OldestReader() (oldest int) {
@@ -116,16 +127,19 @@ func (table *ReaderTable) OldestReader() (oldest int) {
 	oldest = math.MaxInt64
 
 	for index = 0; index < maxNReaders; index++ {
-		if table.slotOffset(index) >= size {
+		switch {
+		case index*slotLength >= size:
 			return
-		}
 
-		if table.slotIsLocked(index) { // reader is active
+		case table.slotIsLocked(index): // reader is active
 			txnID = table.getTxnID(index)
 
-			if txnID < oldest {
-				oldest = txnID
-			}
+		case index == table.index && len(table.idPtr) > 0:
+			txnID = *(table.idPtr[0])
+		}
+
+		if txnID < oldest {
+			oldest = txnID
 		}
 	}
 
@@ -147,53 +161,25 @@ func (table *ReaderTable) fileSize() (size int, e error) {
 	return
 }
 
-func (table *ReaderTable) slotOffset(index int) int {
-	return wordSize * index
-}
-
-func (table *ReaderTable) slotLength() int {
-	return wordSize
-}
-
-func (table *ReaderTable) lockSlot(index int) (
-	unlockSlot func() error, e error,
-) {
+func (table *ReaderTable) lockSlot(index int) (e error) {
 	var (
 		flock *syscall.Flock_t
 	)
 
-	if table.slotIsLocked(index) {
-		return nil, syscall.EWOULDBLOCK
-	}
-
-	table.locked[index] = struct{}{}
-
 	flock = &syscall.Flock_t{
 		Type:   syscall.F_WRLCK,
 		Whence: io.SeekStart,
-		Start:  int64(table.slotOffset(index)),
-		Len:    int64(table.slotLength()),
+		Start:  int64(slotLength * index),
+		Len:    int64(slotLength),
 	}
 
 	e = syscall.FcntlFlock(
 		table.file.Fd(),
-		fOFDSetlk, // process-indepedent; released when file desc. closed
+		fOFDSetlk, // process-independent; released when file descriptor closed
 		flock,
 	)
 	if e != nil {
 		return
-	}
-
-	unlockSlot = func() error {
-		defer delete(table.locked, index)
-
-		flock.Type = syscall.F_UNLCK
-
-		return syscall.FcntlFlock(
-			table.file.Fd(),
-			fOFDSetlk,
-			flock,
-		)
 	}
 
 	return
@@ -201,18 +187,12 @@ func (table *ReaderTable) lockSlot(index int) (
 
 func (table *ReaderTable) slotIsLocked(index int) (locked bool) {
 	var (
-		flock *syscall.Flock_t
+		flock = &syscall.Flock_t{
+			Whence: io.SeekStart,
+			Start:  int64(slotLength * index),
+			Len:    int64(slotLength),
+		}
 	)
-
-	if _, locked = table.locked[index]; locked {
-		return
-	}
-
-	flock = &syscall.Flock_t{
-		Whence: io.SeekStart,
-		Start:  int64(table.slotOffset(index)),
-		Len:    int64(table.slotLength()),
-	}
 
 	syscall.FcntlFlock(
 		table.file.Fd(),
@@ -223,27 +203,45 @@ func (table *ReaderTable) slotIsLocked(index int) (locked bool) {
 	return flock.Type != syscall.F_UNLCK
 }
 
+func (table *ReaderTable) update() error {
+	var (
+		txnID int = math.MaxInt64
+	)
+
+	for {
+		switch {
+		case len(table.idPtr) == 0:
+
+		case *table.idPtr[0] == -1:
+			table.idPtr = table.idPtr[1:]
+
+			continue
+
+		default:
+			txnID = *table.idPtr[0]
+		}
+
+		break
+	}
+
+	return table.setTxnID(txnID)
+}
+
 func (table *ReaderTable) getTxnID(index int) (txnID int) {
-	return common.GetInt(
-		common.Field(table.mmap,
-			table.slotOffset(index),
-			table.slotLength(),
-		),
+	return common.GetIntFromWord(
+		common.WordN(table.mmap, index),
 	)
 }
 
-func (table *ReaderTable) setTxnID(index, txnID int) (e error) {
+func (table *ReaderTable) setTxnID(txnID int) (e error) {
 	var (
-		length int = table.slotLength()
-		offset int = table.slotOffset(index)
-
-		slot = make([]byte, length)
+		word []byte = common.NewWord()
 	)
 
-	common.PutInt(slot, txnID)
+	common.PutIntIntoWord(word, txnID)
 
-	_, e = table.file.WriteAt(slot,
-		int64(offset),
+	_, e = table.file.WriteAt(word,
+		int64(table.index*slotLength),
 	)
 	if e != nil {
 		return

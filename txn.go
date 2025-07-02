@@ -195,7 +195,7 @@ func newTxn(path string, readerTable *reader.ReaderTable,
 	case write == nil:
 		txn.write = denyPermission
 
-		txn.abort, e = readerTable.AcquireSlot(
+		txn.abort, e = readerTable.AcquireHold(
 			txn.meta.getSerialNumber(),
 		)
 		if e != nil {
