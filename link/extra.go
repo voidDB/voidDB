@@ -9,7 +9,7 @@ import (
 type Metadata []byte
 
 func NewMetadata(timestamp Timestamp, txnSerial int) (metadata Metadata) {
-	metadata = make([]byte, 2*common.WordSize)
+	metadata = common.NewTwin()
 
 	metadata.setTimestamp(timestamp)
 
@@ -19,7 +19,7 @@ func NewMetadata(timestamp Timestamp, txnSerial int) (metadata Metadata) {
 }
 
 func (metadata Metadata) Timestamp() Timestamp {
-	return common.Field(metadata, 0, common.WordSize)
+	return common.WordN(metadata, 0)
 }
 
 func (metadata Metadata) setTimestamp(timestamp Timestamp) {
@@ -32,11 +32,11 @@ func (metadata Metadata) setTimestamp(timestamp Timestamp) {
 }
 
 func (metadata Metadata) TxnSerial() TxnSerial {
-	return common.Field(metadata, common.WordSize, common.WordSize)
+	return common.WordN(metadata, 1)
 }
 
 func (metadata Metadata) setTxnSerial(i int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		metadata.TxnSerial(),
 		i,
 	)
@@ -47,7 +47,7 @@ func (metadata Metadata) setTxnSerial(i int) {
 type Timestamp []byte
 
 func (timestamp Timestamp) Nanoseconds() int {
-	return common.GetInt(timestamp)
+	return common.GetIntFromWord(timestamp)
 }
 
 func (timestamp Timestamp) Time() time.Time {
@@ -59,5 +59,5 @@ func (timestamp Timestamp) Time() time.Time {
 type TxnSerial []byte
 
 func (txnSerial TxnSerial) Int() int {
-	return common.GetInt(txnSerial)
+	return common.GetIntFromWord(txnSerial)
 }

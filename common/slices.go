@@ -13,6 +13,14 @@ func NewPage() []byte {
 	return make([]byte, PageSize)
 }
 
+func NewLine() []byte {
+	return make([]byte, LineSize)
+}
+
+func NewTwin() []byte {
+	return make([]byte, TwinSize)
+}
+
 func NewWord() []byte {
 	return make([]byte, WordSize)
 }

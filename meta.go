@@ -9,19 +9,17 @@ import (
 )
 
 const (
-	pageSize = common.PageSize
-	lineSize = common.LineSize
-	wordSize = common.WordSize
-	halfSize = common.HalfSize
+	version = 1 // broken compatibility with v0.1.x
+)
 
-	metaMagic = "voidMETA"
-	version   = 1 // broken compatibility with v0.1.x
+var (
+	metaMagic = []byte("voidMETA")
 )
 
 type voidMeta []byte
 
 func newMeta() (meta voidMeta) {
-	meta = make([]byte, pageSize)
+	meta = common.NewPage()
 
 	meta.setMagic()
 
@@ -35,9 +33,9 @@ func newMetaInit() (meta voidMeta) {
 
 	meta.setTimestamp()
 
-	meta.setRootNodePointer(2 * pageSize)
+	meta.setRootNodePointer(2 * common.PageSize)
 
-	meta.setFrontierPointer(3 * pageSize)
+	meta.setFrontierPointer(3 * common.PageSize)
 
 	return
 }
@@ -45,10 +43,10 @@ func newMetaInit() (meta voidMeta) {
 func (meta voidMeta) makeCopy(concise bool) (copi voidMeta) {
 	switch concise {
 	case true:
-		copi = make([]byte, lineSize)
+		copi = common.NewLine()
 
 	default:
-		copi = make([]byte, pageSize)
+		copi = common.NewPage()
 	}
 
 	copy(copi, meta)
@@ -57,30 +55,30 @@ func (meta voidMeta) makeCopy(concise bool) (copi voidMeta) {
 }
 
 func (meta voidMeta) magic() []byte {
-	return common.Field(meta, 0, wordSize)
+	return common.WordN(meta, 0)
 }
 
 func (meta voidMeta) setMagic() {
 	copy(
 		meta.magic(),
-		[]byte(metaMagic),
+		metaMagic,
 	)
 
 	return
 }
 
 func (meta voidMeta) version() []byte {
-	return common.Field(meta, wordSize, wordSize)
+	return common.WordN(meta, 1)
 }
 
 func (meta voidMeta) getVersion() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		meta.version(),
 	)
 }
 
 func (meta voidMeta) setVersion() {
-	common.PutInt(
+	common.PutIntIntoWord(
 		meta.version(),
 		version,
 	)
@@ -90,7 +88,7 @@ func (meta voidMeta) setVersion() {
 
 func (meta voidMeta) isMeta() bool {
 	switch {
-	case !bytes.Equal(meta.magic(), []byte(metaMagic)):
+	case !bytes.Equal(meta.magic(), metaMagic):
 		return false
 
 	case meta.getVersion() != version:
@@ -101,13 +99,13 @@ func (meta voidMeta) isMeta() bool {
 }
 
 func (meta voidMeta) timestamp() []byte {
-	return common.Field(meta, 2*wordSize, wordSize)
+	return common.WordN(meta, 2)
 }
 
 func (meta voidMeta) getTimestamp() time.Time {
 	return time.Unix(0,
 		int64(
-			common.GetInt(
+			common.GetIntFromWord(
 				meta.timestamp(),
 			),
 		),
@@ -115,7 +113,7 @@ func (meta voidMeta) getTimestamp() time.Time {
 }
 
 func (meta voidMeta) setTimestamp() {
-	common.PutInt(
+	common.PutIntIntoWord(
 		meta.timestamp(),
 		int(time.Now().UnixNano()),
 	)
@@ -124,17 +122,17 @@ func (meta voidMeta) setTimestamp() {
 }
 
 func (meta voidMeta) serialNumber() []byte {
-	return common.Field(meta, 3*wordSize, wordSize)
+	return common.WordN(meta, 3)
 }
 
 func (meta voidMeta) getSerialNumber() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		meta.serialNumber(),
 	)
 }
 
 func (meta voidMeta) setSerialNumber(number int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		meta.serialNumber(),
 		number,
 	)
@@ -143,17 +141,17 @@ func (meta voidMeta) setSerialNumber(number int) {
 }
 
 func (meta voidMeta) rootNodePointer() []byte {
-	return common.Field(meta, 4*wordSize, wordSize)
+	return common.WordN(meta, 4)
 }
 
 func (meta voidMeta) getRootNodePointer() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		meta.rootNodePointer(),
 	)
 }
 
 func (meta voidMeta) setRootNodePointer(pointer int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		meta.rootNodePointer(),
 		pointer,
 	)
@@ -162,17 +160,17 @@ func (meta voidMeta) setRootNodePointer(pointer int) {
 }
 
 func (meta voidMeta) frontierPointer() []byte {
-	return common.Field(meta, 5*wordSize, wordSize)
+	return common.WordN(meta, 5)
 }
 
 func (meta voidMeta) getFrontierPointer() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		meta.frontierPointer(),
 	)
 }
 
 func (meta voidMeta) setFrontierPointer(pointer int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		meta.frontierPointer(),
 		pointer,
 	)
@@ -181,8 +179,9 @@ func (meta voidMeta) setFrontierPointer(pointer int) {
 }
 
 func (meta voidMeta) freeQueue(size int) fifo.FIFO {
-	return common.Field(meta,
-		pageSize/2+lineSize*(logarithm(size)-1),
-		lineSize,
+	var (
+		queues = common.Slice(meta, common.PageSize/2, common.PageSize/2)
 	)
+
+	return common.LineN(queues, logarithm(size)-1)
 }

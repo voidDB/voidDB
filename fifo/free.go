@@ -1,24 +1,21 @@
 package fifo
 
 import (
-	"bytes"
-
 	"github.com/voidDB/voidDB/common"
 )
 
 const (
 	MaxNodeLength = 508
+)
 
-	pageSize = common.PageSize
-	wordSize = common.WordSize
-
-	freeMagic = "voidFREE"
+var (
+	freeMagic = []byte("voidFREE")
 )
 
 type Free []byte
 
 func NewFree(txnID int) (free Free) {
-	free = make([]byte, pageSize)
+	free = common.NewPage()
 
 	free.setMagic()
 
@@ -28,37 +25,38 @@ func NewFree(txnID int) (free Free) {
 }
 
 func (free Free) magic() []byte {
-	return common.Field(free, 0, wordSize)
-}
-
-func (free Free) isFree() bool {
-	return bytes.Equal(
-		free.magic(),
-		[]byte(freeMagic),
-	)
+	return common.WordN(free, 0)
 }
 
 func (free Free) setMagic() {
 	copy(
 		free.magic(),
-		[]byte(freeMagic),
+		freeMagic,
 	)
 
 	return
 }
 
+func (free Free) vetMagic() error {
+	return common.ErrorIfNotEqual(
+		free.magic(),
+		freeMagic,
+		common.ErrorCorrupt,
+	)
+}
+
 func (free Free) txnID() []byte {
-	return common.Field(free, wordSize, wordSize)
+	return common.WordN(free, 1)
 }
 
 func (free Free) getTxnID() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		free.txnID(),
 	)
 }
 
 func (free Free) setTxnID(txnID int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		free.txnID(),
 		txnID,
 	)
@@ -67,17 +65,17 @@ func (free Free) setTxnID(txnID int) {
 }
 
 func (free Free) length() []byte {
-	return common.Field(free, 2*wordSize, wordSize)
+	return common.WordN(free, 2)
 }
 
 func (free Free) getLength() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		free.length(),
 	)
 }
 
 func (free Free) setLength(length int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		free.length(),
 		length,
 	)
@@ -86,17 +84,17 @@ func (free Free) setLength(length int) {
 }
 
 func (free Free) nextPointer() []byte {
-	return common.Field(free, 3*wordSize, wordSize)
+	return common.WordN(free, 3)
 }
 
 func (free Free) getNextPointer() int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		free.nextPointer(),
 	)
 }
 
 func (free Free) setNextPointer(pointer int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		free.nextPointer(),
 		pointer,
 	)
@@ -105,20 +103,17 @@ func (free Free) setNextPointer(pointer int) {
 }
 
 func (free Free) pagePointer(index int) []byte {
-	return common.Field(free,
-		(4+index)*wordSize,
-		wordSize,
-	)
+	return common.WordN(free, 4+index)
 }
 
 func (free Free) getPagePointer(index int) int {
-	return common.GetInt(
+	return common.GetIntFromWord(
 		free.pagePointer(index),
 	)
 }
 
 func (free Free) setPagePointer(index, pointer int) {
-	common.PutInt(
+	common.PutIntIntoWord(
 		free.pagePointer(index),
 		pointer,
 	)

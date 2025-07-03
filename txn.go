@@ -89,7 +89,7 @@ func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 	}
 
 	c = cursor.NewCursor(medium{txn, keyspace},
-		common.GetInt(pointer),
+		common.GetIntFromWord(pointer),
 	)
 
 	return
@@ -246,17 +246,17 @@ func (txn *Txn) setRootNodePointer(keyspace []byte, pointer int) (e error) {
 		return
 	}
 
-	value = make([]byte, wordSize)
+	value = common.NewWord()
 
-	common.PutInt(value, pointer)
+	common.PutIntIntoWord(value, pointer)
 
 	return txn.Cursor.Put(keyspace, value)
 }
 
 func (txn *Txn) getMeta() (e error) {
 	var (
-		meta0 voidMeta = txn.read(0, pageSize)
-		meta1 voidMeta = txn.read(pageSize, pageSize)
+		meta0 voidMeta = txn.read(0, common.PageSize)
+		meta1 voidMeta = txn.read(common.PageSize, common.PageSize)
 	)
 
 	switch {
@@ -286,7 +286,7 @@ func (txn *Txn) getMeta() (e error) {
 
 func (txn *Txn) putMeta() error {
 	return txn.write(txn.meta,
-		txn.meta.getSerialNumber()%2*pageSize,
+		txn.meta.getSerialNumber()%2*common.PageSize,
 	)
 }
 
@@ -296,7 +296,7 @@ func (txn *Txn) enqueueFreeLists() {
 	)
 
 	for size = range txn.freeWarm {
-		if size == pageSize {
+		if size == common.PageSize {
 			continue
 		}
 
@@ -309,7 +309,7 @@ func (txn *Txn) enqueueFreeLists() {
 	}
 
 	for size = range txn.freeCool {
-		if size == pageSize {
+		if size == common.PageSize {
 			continue
 		}
 
@@ -321,20 +321,20 @@ func (txn *Txn) enqueueFreeLists() {
 		)
 	}
 
-	if len(txn.freeWarm[pageSize]) > 0 {
-		txn.meta.freeQueue(pageSize).Enqueue(
+	if len(txn.freeWarm[common.PageSize]) > 0 {
+		txn.meta.freeQueue(common.PageSize).Enqueue(
 			medium{txn, nil},
 			txn.meta.getSerialNumber(),
-			txn.freeWarm[pageSize],
+			txn.freeWarm[common.PageSize],
 			false,
 		)
 	}
 
-	if len(txn.freeCool[pageSize]) > 0 {
-		txn.meta.freeQueue(pageSize).Enqueue(
+	if len(txn.freeCool[common.PageSize]) > 0 {
+		txn.meta.freeQueue(common.PageSize).Enqueue(
 			medium{txn, nil},
 			txn.meta.getSerialNumber(),
-			txn.freeCool[pageSize],
+			txn.freeCool[common.PageSize],
 			true,
 		)
 	}

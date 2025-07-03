@@ -12,7 +12,7 @@ type medium struct {
 }
 
 func (txn medium) Meta() []byte {
-	return common.Field(txn.meta, 2*wordSize, 2*wordSize)
+	return common.TwinN(txn.meta, 1)
 }
 
 func (txn medium) Page(offset int) (page []byte, dirty bool) {
@@ -112,7 +112,7 @@ func (txn medium) getFreePageCool(size int) (pointer int) {
 	pointers, available = txn.freeCool[size]
 
 	if !available {
-		return -pageSize
+		return -common.PageSize
 	}
 
 	pointer = pointers[0]
@@ -141,12 +141,12 @@ func (txn medium) getFreePageNew(size int) (pointer int) {
 
 	pointer = txn.meta.getFrontierPointer()
 
-	if size < pageSize {
-		for p = pointer + size; p < pointer+pageSize; p += size {
+	if size < common.PageSize {
+		for p = pointer + size; p < pointer+common.PageSize; p += size {
 			txn.freeCool[size] = append(txn.freeCool[size], p)
 		}
 
-		size = pageSize
+		size = common.PageSize
 	}
 
 	txn.meta.setFrontierPointer(pointer + size)
