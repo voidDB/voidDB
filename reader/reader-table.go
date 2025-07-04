@@ -52,7 +52,7 @@ func OpenReaderTable(path string) (table *ReaderTable, e error) {
 		int(table.file.Fd()),
 		0,
 		maxNReaders*slotLength,
-		syscall.PROT_READ,
+		syscall.PROT_WRITE,
 		syscall.MAP_SHARED,
 	)
 	if e != nil {
@@ -64,7 +64,7 @@ func OpenReaderTable(path string) (table *ReaderTable, e error) {
 		return
 	}
 
-	return
+	return table, table.setTxnIDPwrite(math.MaxInt64)
 }
 
 func (table *ReaderTable) acquireSlot() (index int, e error) {
@@ -85,9 +85,7 @@ func (table *ReaderTable) Close() error {
 	)
 }
 
-func (table *ReaderTable) AcquireHold(txnID int) (
-	releaseHold func() error, e error,
-) {
+func (table *ReaderTable) AcquireHold(txnID int) (releaseHold func() error) {
 	var (
 		p *int = &txnID
 	)
@@ -105,10 +103,14 @@ func (table *ReaderTable) AcquireHold(txnID int) (
 
 		*p = -1
 
-		return table.update()
+		table.update()
+
+		return nil
 	}
 
-	return releaseHold, table.update()
+	table.update()
+
+	return
 }
 
 func (table *ReaderTable) OldestReader() (oldest int) {
@@ -203,7 +205,7 @@ func (table *ReaderTable) slotIsLocked(index int) (locked bool) {
 	return flock.Type != syscall.F_UNLCK
 }
 
-func (table *ReaderTable) update() error {
+func (table *ReaderTable) update() {
 	var (
 		txnID int = math.MaxInt64
 	)
@@ -224,7 +226,9 @@ func (table *ReaderTable) update() error {
 		break
 	}
 
-	return table.setTxnID(txnID)
+	table.setTxnIDMemMap(txnID)
+
+	return
 }
 
 func (table *ReaderTable) getTxnID(index int) (txnID int) {
@@ -233,7 +237,16 @@ func (table *ReaderTable) getTxnID(index int) (txnID int) {
 	)
 }
 
-func (table *ReaderTable) setTxnID(txnID int) (e error) {
+func (table *ReaderTable) setTxnIDMemMap(txnID int) {
+	common.PutIntIntoWord(
+		common.WordN(table.mmap, table.index),
+		txnID,
+	)
+
+	return
+}
+
+func (table *ReaderTable) setTxnIDPwrite(txnID int) (e error) {
 	var (
 		word []byte = common.NewWord()
 	)

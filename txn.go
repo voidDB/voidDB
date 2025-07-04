@@ -192,12 +192,9 @@ func newTxn(path string, readerTable *reader.ReaderTable,
 	case txn.isReadOnly():
 		txn.write = denyPermission
 
-		txn.abort, e = readerTable.AcquireHold(
+		txn.abort = readerTable.AcquireHold(
 			txn.meta.getSerialNumber(),
 		)
-		if e != nil {
-			return
-		}
 
 	default:
 		txn.saveList = make(map[int][]byte)
