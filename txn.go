@@ -72,7 +72,7 @@ func (txn *Txn) OpenCursor(keyspace []byte) (c *cursor.Cursor, e error) {
 	pointer, e = txn.Cursor.Get(keyspace)
 
 	switch {
-	case errors.Is(e, common.ErrorNotFound):
+	case errors.Is(e, common.ErrorNotFound) && !txn.isReadOnly():
 		e = txn.setRootNodePointer(keyspace,
 			medium{txn, nil}.Save(
 				node.NewNode(),
