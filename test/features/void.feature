@@ -1,4 +1,9 @@
 Feature: Void
+  Scenario: Begin simultaneous write transactions
+    Given there is a new Void "void"
+    When I begin a transaction "txn" in "void"
+    Then beginning a transaction in "void" should fail with EAGAIN
+
   Scenario: Get non-existent record
     Given there is a new Void "void"
     When I begin a read-only transaction "txn" in "void"
